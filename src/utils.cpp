@@ -20,10 +20,14 @@ char * c_str(char *p, size_t len) {
 
 void dump_hex(byte *bytes, size_t size, const char * const msg) {
   printf("%s\n", msg);
-  if (bytes == 0)
-    printf("<null>\n");
-  if (size == 0)
-    printf("<empty>\n");
+  if (bytes == 0) {
+    puts("<null>");
+    return;
+  }
+  if (size == 0) {
+    puts("<empty>");
+    return;
+  }
   size_t offset = 0;
   while (size > 0) {
     int chunk_len = 8 > size ? size : 8;
@@ -38,7 +42,7 @@ void dump_hex(byte *bytes, size_t size, const char * const msg) {
     for (int i = 0; i < chunk_len; ++i) {
       printf("%c", (bytes[i] >= 32 && bytes[i] <= 127) ? bytes[i] : '.');
     }
-    printf("\n");
+    puts("");
     bytes += chunk_len;
     size -= chunk_len;
     offset += chunk_len;

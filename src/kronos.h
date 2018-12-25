@@ -36,7 +36,7 @@ public:
 
   MIDIData * read_object_dump(byte type, byte bank, int index);
 
-  void print_set_list(int set_list_num);
+  void dump_sysex(const char * const msg);
 
 private:
   MIDIEndpointRef input;

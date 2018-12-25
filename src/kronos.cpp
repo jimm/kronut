@@ -217,15 +217,6 @@ MIDIData * Kronos::read_set_list(int set_list_num) {
   return read_object_dump(OBJ_TYPE_SET_LIST, 0, set_list_num);
 }
 
-void Kronos::print_set_list(int set_list_num) {
-  MIDIData *mdata = read_set_list(set_list_num);
-  memcpy(&set_lists[set_list_num], mdata->internal_bytes, mdata->internal_len);
-  delete mdata;
-
-  cout << "Set List " << set_list_num << ": "
-       << c_str(set_lists[set_list_num].name, 24) << endl;
-  for (int i = 0; i < 128; ++i) {
-    cout << "  Slot " << i << ": "
-         << c_str(set_lists[set_list_num].slots[i].name, 24) << endl;
-  }
+void Kronos::dump_sysex(const char * const msg) {
+  dump_hex(sysex, sysex_length, msg);
 }

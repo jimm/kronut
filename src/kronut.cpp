@@ -156,8 +156,8 @@ void run(Kronos *k) {
   Editor editor(k);
   char buf[32];
 
-  printf("Type 'e' to edit current slot, 'q' to quit, 'h' for help.\n");
-  printf("Kronut can't save the set list itself. Remember to do that.\n");
+  puts("Type 'e' to edit current slot, 'q' to quit, 'h' for help.");
+  puts("Kronut can't save the set list itself. Remember to do that.");
   while (true) {
     printf("kronut> ");
     fflush(stdout);
@@ -167,12 +167,15 @@ void run(Kronos *k) {
     case 'e':
       editor.edit_current_slot();
       break;
+    case 'd':
+      editor.dump_current_slot();
+      break;
     case 'q':
       return;
     case 'h':
-      printf("  e: edit current slot");
-      printf("  h: this help");
-      printf("  q: quit");
+      puts("  e: edit current slot");
+      puts("  h: this help");
+      puts("  q: quit");
       break;
     default:
       break;
@@ -181,23 +184,23 @@ void run(Kronos *k) {
 }
 
 void usage(const char *prog_name) {
-  cerr << "usage: " << basename((char *)prog_name) << " [-l] [-i N] [-o N] [-n] [-h] file\n"
-       << "\n"
-       << "    -l or --list-ports\n"
-       << "        List all attached MIDI ports\n"
-       << "\n"
-       << "    -i or --input N\n"
-       << "        Input number\n"
-       << "\n"
-       << "    -o or --output N\n"
-       << "        Output number\n"
-       << "\n"
-       << "    -n or --no-midi\n"
-       << "        No MIDI (ignores bad/unknown MIDI ports)\n"
-       << "\n"
-       << "    -h or --help\n"
-       << "        This help"
-       << endl;
+  cerr << "usage: " << basename((char *)prog_name)
+       << "[-l] [-i N] [-o N] [-n] [-h] file" << endl
+       << endl
+       << "    -l or --list-ports" << endl
+       << "        List all attached MIDI ports" << endl
+       << endl
+       << "    -i or --input N" << endl
+       << "        Input number" << endl
+       << endl
+       << "    -o or --output N" << endl
+       << "        Output number" << endl
+       << endl
+       << "    -n or --no-midi" << endl
+       << "        No MIDI (ignores bad/unknown MIDI ports)" << endl
+       << endl
+       << "    -h or --help" << endl
+       << "        This help" << endl;
 }
 
 void parse_command_line(int argc, char * const *argv, struct opts *opts) {

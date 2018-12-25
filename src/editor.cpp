@@ -25,6 +25,13 @@ void Editor::edit_current_slot() {
   remove_tempfile();
 }
 
+void Editor::dump_current_slot() {
+  name = kronos->read_current_slot_name();
+  kronos->dump_sysex("slot name");
+  comments = kronos->read_current_slot_comments();
+  kronos->dump_sysex("slot comments");
+}
+
 void Editor::read_slot() {
   name = kronos->read_current_slot_name();
   comments = kronos->read_current_slot_comments();
@@ -40,12 +47,19 @@ void Editor::save_to_tempfile() {
 int Editor::edit_tempfile() {
   char buf[1024];
   char *editor = getenv("VISUAL");
+  char *options = getenv("KRONUT_VISUAL_OPTIONS");
 
-  if (editor == 0)
+  if (editor == 0) {
     editor = getenv("EDITOR");
-  if (editor == 0)
+    options = getenv("KRONUT_EDITOR_OPTIONS");
+  }
+  if (editor == 0) {
     editor = (char *)"vi";
-  sprintf(buf, "%s %s 2>&1", editor, TMPFILE);
+    options = getenv("KRONUT_VI_OPTIONS");
+  }
+  if (options == 0)
+    options = (char *)"";
+  sprintf(buf, "%s %s %s 2>&1", editor, options, TMPFILE);
   return system(buf);
 }
 
