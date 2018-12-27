@@ -47,6 +47,14 @@ void test_ks_set_str() {
   tassert(ibytes[23] == ' ', "bad padding at end of bytes");
 }
 
+void test_ks_crlf() {
+  byte midi_str[] = {
+    0, 'a', 'b', 'c', 0x0d, 0x0a, 'd', 'e'
+  };
+  KString kstr(MD_INIT_MIDI, midi_str, 8, 0);
+  tassert(strcmp(kstr.str(), "abc\nde") == 0, "bad cr/lf conversion");
+}
+
 void test_kstring() {
   test_run(test_ks_m2i_len);
   test_run(test_ks_i2m_len);
@@ -54,4 +62,5 @@ void test_kstring() {
   test_run(test_ks_init_with_internal);
   test_run(test_ks_padding);
   test_run(test_ks_set_str);
+  test_run(test_ks_crlf);
 }
