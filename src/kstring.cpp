@@ -51,8 +51,8 @@ void KString::dump() {
 }
 
 // Copy internal bytes to str, replacing padding byte with 0 and replacing
-// \r with \n. (Kronos strings are stored with \r newlines, not DOS \r\n or
-// Unix \n.)
+// \r\n and \r with \n. (Kronos strings are stored with \r newlines, not DOS
+// \r\n or Unix \n.)
 void KString::internal_bytes_to_str() {
   if (c_str)
     free(c_str);
@@ -60,11 +60,20 @@ void KString::internal_bytes_to_str() {
   memcpy(c_str, internal_bytes, internal_len);
   c_str[internal_len] = 0;
 
-  char *p = c_str + internal_len - 1;
-  // Turn trailing pad chars, spaces, and carriage returns into 0s.
-  while (p >= c_str && (*p == pad || *p == '\r' || *p == ' '))
-    *p-- = 0;
+  char *p;
+
+  // Turn trailing pad chars, spaces, crs, and lfs into 0s.
+  for (p = c_str + internal_len - 1;
+       p >= c_str && (*p == pad || *p == '\r' || *p == '\n' || *p == ' ');
+       --p)
+    *p = 0;
+
+  // Fix newlines
   for (char *r = c_str; r < p; ++r)
-    if (*r == '\r')
-      *r = '\n';
+    if (*r == '\r') {
+      if (*(r+1) == '\n')
+        memmove(r, r+1, strlen(r+1)+1);
+      else
+        *r = '\n';
+    }
 }
