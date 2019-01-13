@@ -156,7 +156,7 @@ void run(Kronos *k) {
   Editor editor(k);
   char buf[32];
 
-  puts("Type 'e' to edit current slot, 'q' to quit, 'h' for help.");
+  puts("Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.");
   puts("Kronut can't save the set list itself. Remember to do that.");
   while (true) {
     printf("kronut> ");
@@ -170,11 +170,16 @@ void run(Kronos *k) {
     case 'd':
       editor.dump_current_slot();
       break;
+    case 'p':
+      editor.print_current_slot();
+      break;
     case 'q':
       return;
-    case 'h':
+    case 'h': case '?':
       puts("  e: edit current slot");
-      puts("  h: this help");
+      puts("  p: print current slot");
+      puts("  d: dump current slot");
+      puts("  h: this help (also '?')");
       puts("  q: quit");
       break;
     default:

@@ -25,6 +25,16 @@ void Editor::edit_current_slot() {
   remove_tempfile();
 }
 
+void Editor::print_current_slot() {
+  read_slot();
+  save_to_tempfile();
+
+  char buf[1024];
+  sprintf(buf, "cat %s", TMPFILE);
+  system(buf);
+  puts("");
+}
+
 void Editor::dump_current_slot() {
   name = kronos->read_current_slot_name();
   kronos->dump_sysex("slot name");

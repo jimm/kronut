@@ -12,6 +12,7 @@ public:
   // Reads current slot's name and comment, saves to temp file, opens
   // editor. When editor returns, reads temp file and writes current slot.
   void edit_current_slot();
+  void print_current_slot();
   void dump_current_slot();
 
   // Read current slot's name and comment.
