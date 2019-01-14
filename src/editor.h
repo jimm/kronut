@@ -1,6 +1,7 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
+#include <string>
 #include "kronos.h"
 #include "kstring.h"
 
@@ -23,13 +24,18 @@ public:
 
 private:
   Kronos *kronos;
+  int set_number;
+  int slot_number;
   KString *name;
   KString *comments;
+  string save_dir;
+  string curr_path;
 
-  void save_to_tempfile();
-  int edit_tempfile();
-  void load_from_tempfile();
-  void remove_tempfile();
+  void save_to_file();
+  int edit_file();
+  bool load_from_file();
+  void make_file_copy();
+  void make_file_path(const char * const suffix);
 };
 
 #endif /* EDITOR_H */

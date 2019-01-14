@@ -28,6 +28,8 @@ public:
 
   KString * read_current_slot_name();
   KString * read_current_slot_comments();
+  int current_set_number() { return (int)obj_dump_bank; }
+  int current_slot_number() { return obj_dump_index; }
   void write_current_slot_name(KString *kstr);
   void write_current_slot_comments(KString *kstr);
 
@@ -45,11 +47,14 @@ private:
   byte *sysex;
   size_t sysex_allocated_size;
   size_t sysex_length;
+  byte obj_dump_bank;           // curr slot name/comment set list number
+  int obj_dump_index;           // curr slot name/comment slot number
 
   void read_sysex();
   KString * read_current_string(int obj_type, byte pad);
   void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
   void write_current_string(int obj_type, KString *kstr);
+  void set_obj_dump_bank_and_index();
 
   void clear_sysex_buffer();
   void append_sysex_byte(byte b);

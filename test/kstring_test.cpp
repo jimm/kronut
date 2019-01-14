@@ -36,6 +36,15 @@ void test_ks_padding() {
   tassert(c_str[23] == 0, "padding not converted to 0 at 23");
 }
 
+void test_ks_truncation() {
+  KString kstr(MD_INIT_MIDI, midi_letters, 28, 0);
+  kstr.set_str("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+  tassert(kstr.internal_len == 24, 0);
+  tassert(kstr.midi_len == 28, 0);
+  tassert(strcmp(kstr.str(), "abcdefghijklmnopqrstuvwx") == 0,
+          "not truncated properly");
+}
+
 void test_ks_set_str() {
   KString kstr(MD_INIT_INTERNAL, internal_letters, 24, ' ');
   kstr.set_str("hello\nworld");
@@ -61,6 +70,7 @@ void test_kstring() {
   test_run(test_ks_init_with_midi);
   test_run(test_ks_init_with_internal);
   test_run(test_ks_padding);
+  test_run(test_ks_truncation);
   test_run(test_ks_set_str);
   test_run(test_ks_crlf);
 }
