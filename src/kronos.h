@@ -21,7 +21,7 @@ public:
   void set_input(MIDIEndpointRef input_ref) { input = input_ref; }
   void set_output(MIDIEndpointRef output_ref) { output = output_ref; }
 
-  void receive_midi(const MIDIPacketList *pktlist);
+  virtual void receive_midi(const MIDIPacketList *pktlist);
 
   void read_all_set_lists();
   MIDIData * read_set_list(int set_list_num);
@@ -40,7 +40,7 @@ public:
 
   void dump_sysex(const char * const msg);
 
-private:
+protected:
   MIDIEndpointRef input;
   MIDIEndpointRef output;
   bool receiving_sysex;
@@ -50,10 +50,10 @@ private:
   byte obj_dump_bank;           // curr slot name/comment set list number
   int obj_dump_index;           // curr slot name/comment slot number
 
-  void read_sysex();
-  KString * read_current_string(int obj_type, byte pad);
-  void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
-  void write_current_string(int obj_type, KString *kstr);
+  virtual void read_sysex();
+  virtual KString * read_current_string(int obj_type, byte pad);
+  virtual void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
+  virtual void write_current_string(int obj_type, KString *kstr);
   void set_obj_dump_bank_and_index();
 
   void clear_sysex_buffer();

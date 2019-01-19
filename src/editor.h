@@ -22,7 +22,7 @@ public:
   // Write current slot's name and comment.
   void write_slot();
 
-private:
+protected:
   Kronos *kronos;
   int set_number;
   int slot_number;
@@ -32,10 +32,9 @@ private:
   string curr_path;
 
   void save_to_file();
-  int edit_file();
-  bool load_from_file();
-  void make_file_copy();
-  void make_file_path(const char * const suffix);
+  virtual int edit_file();
+  void load_from_file();
+  void make_file_path();
 };
 
 #endif /* EDITOR_H */

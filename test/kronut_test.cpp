@@ -4,6 +4,8 @@
 #include "kronut_test.h"
 #include "midi_data_test.h"
 #include "kstring_test.h"
+#include "mock_kronos_test.h"
+#include "editor_test.h"
 
 // ================ running tests ================
 
@@ -45,6 +47,8 @@ void print_results() {
 void run_tests() {
   test_midi_data();
   test_kstring();
+  test_mock_kronos();
+  test_editor();
 }
 
 void run_tests_and_print_results() {

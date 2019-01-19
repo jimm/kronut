@@ -3,9 +3,13 @@
 
 Editor::Editor(Kronos *k) : kronos(k), name(0), comments(0) {
   char *dir = getenv("KRONUT_EDIT_SAVE_DIR");
-  save_dir = dir || "/tmp/";
-  if (dir != 0 && dir[strlen(dir)-1] != '/')
-    save_dir += '/';
+  if (dir) {
+    save_dir = dir;
+    if (dir[strlen(dir)-1] != '/')
+      save_dir += '/';
+  }
+  else
+    save_dir = string(getenv("HOME")) + "/kronut/";
 }
 
 Editor::~Editor() {
@@ -17,14 +21,12 @@ Editor::~Editor() {
 
 void Editor::edit_current_slot() {
   read_slot();
-  make_file_path("");
+  make_file_path();
   save_to_file();
   int status = edit_file();
   if (status == 0) {
-    bool truncated = load_from_file();
+    load_from_file();
     write_slot();
-    if (truncated)
-      make_file_copy();
   }
 }
 
@@ -51,7 +53,8 @@ void Editor::read_slot() {
 
 void Editor::save_to_file() {
   FILE *fp = fopen(curr_path.c_str(), "w");
-  fprintf(fp, "%s\n\n", name->str()); // extra newline to make editing easier
+  fputs(name->str(), fp);
+  fputs("", fp);                // extra newline to make editing easier
   fputs(comments->str(), fp);
   fclose(fp);
 }
@@ -75,20 +78,16 @@ int Editor::edit_file() {
   return system(buf);
 }
 
-// Loads name and comment from tempfile. Returns true if either name or
-// comment was truncated.
-bool Editor::load_from_file() {
+// Loads name and comment from tempfile.
+void Editor::load_from_file() {
   int chars_read;
   char buf[1024];
-  bool truncated = false;
 
   FILE *fp = fopen(curr_path.c_str(), "r");
   fgets(buf, name->internal_len+1, fp);
   if (buf[strlen(buf)-1] == '\n')
     buf[strlen(buf)-1] = 0;
   name->set_str(buf);
-  if (strcmp(name->str(), buf) != 0)
-    truncated = true;
 
   fread(buf, 1, 1, fp); // skip newline added by read_slot()
   int len = fread(buf, 1, 1023, fp);
@@ -96,11 +95,8 @@ bool Editor::load_from_file() {
   while (len >= 0 && buf[len] == '\n') // strip trailing newlines
     buf[len--] = 0;
   comments->set_str(buf);
-  if (strcmp(comments->str(), buf) != 0)
-    truncated = true;
 
   fclose(fp);
-  return truncated;
 }
 
 void Editor::write_slot() {
@@ -113,24 +109,11 @@ void Editor::write_slot() {
     return;
 }
 
-// Makes a copy of dirname(curr_path)/NNN.txt into
-// dirname(curr_path)/NNN_original.txt.
-void Editor::make_file_copy() {
-  string edited_path = curr_path;
-  char buf[1024];
-
-  make_file_path("_original");
-  sprintf(buf, "cp %s %s", edited_path.c_str(), curr_path.c_str());
-  system(buf);
-  curr_path = edited_path;
-}
-
 // Save path to file into curr_path. Makes parent directories if needed.
-void Editor::make_file_path(const char * const suffix) {
+void Editor::make_file_path() {
   char buf[1024];
 
-  sprintf(buf, "%s/%03d/%03d%s.txt", save_dir.c_str(), set_number, slot_number,
-          suffix);
+  sprintf(buf, "%s%03d/%03d.txt", save_dir.c_str(), set_number, slot_number);
   curr_path = buf;
 
   sprintf(buf, "mkdir -p %s", dirname((char *)curr_path.c_str()));
