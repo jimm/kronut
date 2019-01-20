@@ -1,5 +1,9 @@
+#include <ctype.h>
 #include <libgen.h>
 #include "editor.h"
+
+#define EDITOR_NAME 0
+#define EDITOR_COMMENTS 1
 
 Editor::Editor(Kronos *k) : kronos(k), name(0), comments(0) {
   char *dir = getenv("KRONUT_EDIT_SAVE_DIR");
@@ -53,9 +57,10 @@ void Editor::read_slot() {
 
 void Editor::save_to_file() {
   FILE *fp = fopen(curr_path.c_str(), "w");
-  fputs(name->str(), fp);
-  fputs("", fp);                // extra newline to make editing easier
-  fputs(comments->str(), fp);
+  fprintf(fp, "# Slot Name\n\n");
+  fprintf(fp, "%s\n\n", name->str());
+  fprintf(fp, "# Comments\n\n");
+  fprintf(fp, "%s\n", comments->str());
   fclose(fp);
 }
 
@@ -80,23 +85,36 @@ int Editor::edit_file() {
 
 // Loads name and comment from tempfile.
 void Editor::load_from_file() {
-  int chars_read;
-  char buf[1024];
+  int which = -1;
+  string buf;
+  char line[1024];
 
   FILE *fp = fopen(curr_path.c_str(), "r");
-  fgets(buf, name->internal_len+1, fp);
-  if (buf[strlen(buf)-1] == '\n')
-    buf[strlen(buf)-1] = 0;
-  name->set_str(buf);
-
-  fread(buf, 1, 1, fp); // skip newline added by read_slot()
-  int len = fread(buf, 1, 1023, fp);
-  buf[len--] = 0;
-  while (len >= 0 && buf[len] == '\n') // strip trailing newlines
-    buf[len--] = 0;
-  comments->set_str(buf);
-
+  while (fgets(line, 1024, fp) != 0) {
+    if (strncmp("# Slot Name", line, 11) == 0) {
+      which = EDITOR_NAME;
+      buf = "";
+    }
+    else if (strncmp("# Comments", line, 10) == 0) {
+      which = EDITOR_COMMENTS;
+      name->set_str(trimmed(buf).c_str());
+      buf = "";
+    }
+    else if (which != -1)
+      buf += line;
+  }
+  comments->set_str(trimmed(buf).c_str());
   fclose(fp);
+}
+
+string Editor::trimmed(string s) {
+  char buf[1024], *p;
+
+  strcpy(buf, s.c_str());
+  for (p = buf; *p && isspace(*p); ++p) ;
+  for (char *q = p + strlen(p) -1; q >= p && isspace(*q); --q)
+    *q = 0;
+  return string(p);
 }
 
 void Editor::write_slot() {
@@ -113,7 +131,7 @@ void Editor::write_slot() {
 void Editor::make_file_path() {
   char buf[1024];
 
-  sprintf(buf, "%s%03d/%03d.txt", save_dir.c_str(), set_number, slot_number);
+  sprintf(buf, "%s%03d/%03d.md", save_dir.c_str(), set_number, slot_number);
   curr_path = buf;
 
   sprintf(buf, "mkdir -p %s", dirname((char *)curr_path.c_str()));

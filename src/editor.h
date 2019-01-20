@@ -35,6 +35,7 @@ protected:
   virtual int edit_file();
   void load_from_file();
   void make_file_path();
+  string trimmed(string s);
 };
 
 #endif /* EDITOR_H */
