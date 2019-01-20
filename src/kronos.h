@@ -30,8 +30,8 @@ public:
   KString * read_current_slot_comments();
   int current_set_number() { return (int)obj_dump_bank; }
   int current_slot_number() { return obj_dump_index; }
-  void write_current_slot_name(KString *kstr);
-  void write_current_slot_comments(KString *kstr);
+  virtual void write_current_slot_name(KString *kstr);
+  virtual void write_current_slot_comments(KString *kstr);
 
   bool error_reply_seen();
   const char * const error_reply_message();

@@ -1,11 +1,13 @@
+#include <string.h>
 #include <ctype.h>
 #include <libgen.h>
 #include "editor.h"
 
+#define EDITOR_TMPFILE "/tmp/kronut_editor.md"
 #define EDITOR_NAME 0
 #define EDITOR_COMMENTS 1
 
-Editor::Editor(Kronos *k) : kronos(k), name(0), comments(0) {
+Editor::Editor(Kronos *k) : kronos(k), name(""), comments("") {
   char *dir = getenv("KRONUT_EDIT_SAVE_DIR");
   if (dir) {
     save_dir = dir;
@@ -16,51 +18,55 @@ Editor::Editor(Kronos *k) : kronos(k), name(0), comments(0) {
     save_dir = string(getenv("HOME")) + "/kronut/";
 }
 
-Editor::~Editor() {
-  if (name)
-    delete name;
-  if (comments)
-    delete comments;
-}
+int Editor::edit_current_slot(bool read_from_kronos) {
+  if (read_from_kronos)
+    read_slot();
 
-void Editor::edit_current_slot() {
-  read_slot();
-  make_file_path();
   save_to_file();
   int status = edit_file();
   if (status == 0) {
     load_from_file();
+    remove(EDITOR_TMPFILE);
+
+    if (name_too_long() || comments_too_long())
+      return EDITOR_TOO_LONG;
+
     write_slot();
+    return EDITOR_OK;
   }
+  else
+    return EDITOR_ERROR;
 }
 
 void Editor::print_current_slot() {
   read_slot();
-  puts(name->str());
+  puts(name.c_str());
   puts("");
-  puts(comments->str());
+  puts(comments.c_str());
 }
 
-void Editor::dump_current_slot() {
-  name = kronos->read_current_slot_name();
-  kronos->dump_sysex("slot name");
-  comments = kronos->read_current_slot_comments();
-  kronos->dump_sysex("slot comments");
-}
+void Editor::read_maybe_dump(bool dump) {
+  KString *kstr;
 
-void Editor::read_slot() {
-  name = kronos->read_current_slot_name();
-  comments = kronos->read_current_slot_comments();
-  set_number = kronos->current_set_number();
-  slot_number = kronos->current_slot_number();
+  kstr = kronos->read_current_slot_name();
+  name = kstr->str();
+  if (dump)
+    kronos->dump_sysex("slot name");
+  delete kstr;
+
+  kstr = kronos->read_current_slot_comments();
+  comments = kstr->str();
+  if (dump)
+    kronos->dump_sysex("slot comments");
+  delete kstr;
 }
 
 void Editor::save_to_file() {
-  FILE *fp = fopen(curr_path.c_str(), "w");
+  FILE *fp = fopen(EDITOR_TMPFILE, "w");
   fprintf(fp, "# Slot Name\n\n");
-  fprintf(fp, "%s\n\n", name->str());
+  fprintf(fp, "%s\n\n", name.c_str());
   fprintf(fp, "# Comments\n\n");
-  fprintf(fp, "%s\n", comments->str());
+  fprintf(fp, "%s\n", comments.c_str());
   fclose(fp);
 }
 
@@ -79,7 +85,7 @@ int Editor::edit_file() {
   }
   if (options == 0)
     options = (char *)"";
-  sprintf(buf, "%s %s %s 2>&1", editor, options, curr_path.c_str());
+  sprintf(buf, "%s %s %s 2>&1", editor, options, EDITOR_TMPFILE);
   return system(buf);
 }
 
@@ -89,7 +95,7 @@ void Editor::load_from_file() {
   string buf;
   char line[1024];
 
-  FILE *fp = fopen(curr_path.c_str(), "r");
+  FILE *fp = fopen(EDITOR_TMPFILE, "r");
   while (fgets(line, 1024, fp) != 0) {
     if (strncmp("# Slot Name", line, 11) == 0) {
       which = EDITOR_NAME;
@@ -97,13 +103,13 @@ void Editor::load_from_file() {
     }
     else if (strncmp("# Comments", line, 10) == 0) {
       which = EDITOR_COMMENTS;
-      name->set_str(trimmed(buf).c_str());
+      name = trimmed(buf);
       buf = "";
     }
     else if (which != -1)
       buf += line;
   }
-  comments->set_str(trimmed(buf).c_str());
+  comments = trimmed(buf);
   fclose(fp);
 }
 
@@ -118,22 +124,19 @@ string Editor::trimmed(string s) {
 }
 
 void Editor::write_slot() {
-  kronos->write_current_slot_name(name);
+  KString *kstr;
+
+  kstr = new KString(MD_INIT_INTERNAL, (byte *)name.c_str(),
+                     SLOT_NAME_LEN, 0);
+  kronos->write_current_slot_name(kstr);
+  delete kstr;
   if (kronos->error_reply_seen()) // error already printed
     return;
 
-  kronos->write_current_slot_comments(comments);
+  kstr = new KString(MD_INIT_INTERNAL, (byte *)comments.c_str(),
+                     SLOT_COMMENTS_LEN, 0);
+  kronos->write_current_slot_comments(kstr);
+  delete kstr;
   if (kronos->error_reply_seen()) // error already printed
     return;
-}
-
-// Save path to file into curr_path. Makes parent directories if needed.
-void Editor::make_file_path() {
-  char buf[1024];
-
-  sprintf(buf, "%s%03d/%03d.md", save_dir.c_str(), set_number, slot_number);
-  curr_path = buf;
-
-  sprintf(buf, "mkdir -p %s", dirname((char *)curr_path.c_str()));
-  system(buf);
 }

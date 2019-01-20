@@ -22,21 +22,11 @@ MockKronos *MockKronos_instance() {
 // ================ allocation ================
 
 // channel 1-15
-MockKronos::MockKronos(byte chan) : Kronos(chan) {
+MockKronos::MockKronos(byte chan) : Kronos(chan), name(""), comments("") {
   mock_kronos_instance = this;
 }
 
 MockKronos::~MockKronos() {
-}
-
-void MockKronos::receive_midi(const MIDIPacketList *packet_list) {
-}
-
-void MockKronos::send_sysex(const byte * const sysex, const UInt32 bytes_to_send) {
-}
-
-// Wait for next System Exclusive message to be read into `sysex`.
-void MockKronos::read_sysex() {
 }
 
 KString * MockKronos::read_current_string(int obj_type, byte pad) {
@@ -53,7 +43,4 @@ KString * MockKronos::read_current_string(int obj_type, byte pad) {
 
   strcpy((char *)buf, "Slot Comments\nAnd another line");
   return new KString(MD_INIT_INTERNAL, buf, SLOT_COMMENTS_LEN, 0);
-}
-
-void MockKronos::write_current_string(int obj_type, KString *kstr) {
 }

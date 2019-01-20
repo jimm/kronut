@@ -144,6 +144,7 @@ const char * const Kronos::error_reply_message() {
   return error_reply_messages[error_index];
 }
 
+// Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
   const byte request_sysex[] = {
     SYSEX, KORG_MANUFACTURER_ID, 0x30 + 0, KRONOS_DEVICE_ID,
@@ -162,10 +163,12 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
   return new KString(MD_INIT_MIDI, sysex + start, end - start, pad);
 }
 
+// Returns a newly allocated KString.
 KString * Kronos::read_current_slot_name() {
   return read_current_string(OBJ_TYPE_SET_LIST_SLOT_NAME, 0);
 }
 
+// Returns a newly allocated KString.
 KString * Kronos::read_current_slot_comments() {
   return read_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, 0);
 }

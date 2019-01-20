@@ -1,6 +1,7 @@
 #ifndef SLOT_H
 #define SLOT_H
 
+// Name and comments lengths are for "internal bytes", not MIDI byte length
 #define SLOT_NAME_LEN 24
 #define SLOT_COMMENTS_LEN 512
 

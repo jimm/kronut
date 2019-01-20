@@ -164,8 +164,18 @@ void run(Kronos *k) {
     fgets(buf, 32, stdin);
 
     switch (buf[0]) {
-    case 'e':
-      editor.edit_current_slot();
+    case 'e': case 'r':
+      if (editor.edit_current_slot(buf[0] == 'e') == EDITOR_TOO_LONG) {
+        puts("error: slot strings were NOT sent back to the Kronos");
+        if (editor.name_too_long())
+          printf("  name is too long (%ld chars, %d max)\n",
+                 strlen(editor.current_name().c_str()), SLOT_NAME_LEN);
+        if (editor.comments_too_long()) {
+          printf("  comments are too long (%ld chars, %d max)\n",
+                 strlen(editor.current_comments().c_str()), SLOT_COMMENTS_LEN);
+        }
+        puts("Type 'r' to re-edit what you saved.");
+      }
       break;
     case 'd':
       editor.dump_current_slot();
@@ -177,6 +187,7 @@ void run(Kronos *k) {
       return;
     case 'h': case '?':
       puts("  e: edit current slot");
+      puts("  r: re-edit (does not get data from Kronos)");
       puts("  p: print current slot");
       puts("  d: dump current slot");
       puts("  h: this help (also '?')");

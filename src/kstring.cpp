@@ -1,3 +1,9 @@
+/*
+ * A KString holds a string (array of chars) and keeps internal and MIDI
+ * bytes in sync. When you change the string via `set_str`, the data is
+ * truncated to the original length specified in the constructor.
+ */
+
 #include <string.h>
 #include "kstring.h"
 #include "utils.h"

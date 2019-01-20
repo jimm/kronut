@@ -7,13 +7,7 @@
 #include "../src/mock_kronos.h"
 
 #define BUFSIZ 1024
-#define SAVE_DIR "/tmp/kronut_tests"
-#define SAVE_FILE SAVE_DIR "/002/012.md"
-
-// void test_editor_setup() { system("rm -rf " SAVE_DIR); }
-// void test_editor_teardown() { system("rm -rf " SAVE_DIR); }
-void test_editor_setup() { }
-void test_editor_teardown() { }
+#define SAVE_FILE "/tmp/kronut_editor.md"
 
 // This subclass of Editor overrides `edit_file` to write text given to it.
 class TestEditor : public Editor {
@@ -31,49 +25,39 @@ public:
     return 0;
   }
 
-  char *c_name() { return name->str(); }
-  char *c_comments() { return comments->str(); }
+  const char *c_name() { return name.c_str(); }
+  const char *c_comments() { return comments.c_str(); }
 
   void set_saved_text(string str) { saved_text = str; }
 };
 
-// Compare contents of file `path` to `contents`.
-void assert_file_contents(string path, string contents, string where_from) {
-  char buf[BUFSIZ];
-  FILE *fp = fopen(path.c_str(), "r");
-  size_t len = fread(buf, 1, BUFSIZ, fp);
-  fclose(fp);
-  buf[len] = 0;
-
-  string err = where_from;
-  err += ": contents mis-match in ";
-  err += path;
-  err += "; expected ";
-  err += contents;
-  err += " but got ";
-  err += buf;
-  tassert(contents == string(buf), err.c_str());
-}
-
 void test_ed_edit_current_slot_saves() {
-  setenv("KRONUT_EDIT_SAVE_DIR", SAVE_DIR, 1);
-  test_editor_setup();
-
   MockKronos mk = MockKronos(0);
   TestEditor ed = TestEditor(&mk);
 
   string file_text = "# Slot Name\n\nKronut Rules\n\n# Comments\n\nline one\nline B\n  \n \n";
   ed.set_saved_text(file_text);
-  ed.edit_current_slot();
-  tassert(access(SAVE_FILE, F_OK) == 0, "file not saved to proper place");
-  assert_file_contents(SAVE_FILE, file_text, "default save");
+  int status = ed.edit_current_slot(true);
+  tassert(status == EDITOR_OK, 0);
   tassert(strcmp(ed.c_name(), "Kronut Rules") == 0,
           (string("name seen: \"") + ed.c_name() + "\"").c_str());
   tassert(strcmp(ed.c_comments(), "line one\nline B") == 0,
           (string("comments seen: \"") + ed.c_comments() + "\"").c_str());
-  test_editor_teardown();
+}
+
+void test_ed_too_long_returns_error() {
+  MockKronos mk = MockKronos(0);
+  TestEditor ed = TestEditor(&mk);
+
+  string file_text = "# Slot Name\n\nKronut Rules\n\n# Comments\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  ed.set_saved_text(file_text);
+  int status = ed.edit_current_slot(true);
+  char buf[BUFSIZ];
+  sprintf(buf, "expected error return %d but got %d\n", EDITOR_TOO_LONG, status);
+  tassert(status == EDITOR_TOO_LONG, buf);
 }
 
 void test_editor() {
   test_run(test_ed_edit_current_slot_saves);
+  test_run(test_ed_too_long_returns_error);
 }
