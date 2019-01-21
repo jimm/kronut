@@ -12,8 +12,6 @@ typedef unsigned char byte;
 
 class Kronos {
 public:
-  byte channel;
-  SetList set_lists[128];
 
   Kronos(byte channel);
   ~Kronos();
@@ -22,9 +20,6 @@ public:
   void set_output(MIDIEndpointRef output_ref) { output = output_ref; }
 
   virtual void receive_midi(const MIDIPacketList *pktlist);
-
-  void read_all_set_lists();
-  MIDIData * read_set_list(int set_list_num);
 
   KString * read_current_slot_name();
   KString * read_current_slot_comments();
@@ -43,6 +38,7 @@ public:
 protected:
   MIDIEndpointRef input;
   MIDIEndpointRef output;
+  byte channel;
   bool receiving_sysex;
   byte *sysex;
   size_t sysex_allocated_size;

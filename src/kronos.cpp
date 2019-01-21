@@ -222,10 +222,6 @@ void Kronos::set_obj_dump_bank_and_index() {
   obj_dump_index = (sysex[7] << 7) + sysex[8];
 }
 
-MIDIData * Kronos::read_set_list(int set_list_num) {
-  return read_object_dump(OBJ_TYPE_SET_LIST, 0, set_list_num);
-}
-
 void Kronos::dump_sysex(const char * const msg) {
   dump_hex(sysex, sysex_length, msg);
 }
