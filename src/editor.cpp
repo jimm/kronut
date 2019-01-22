@@ -8,14 +8,6 @@
 #define EDITOR_COMMENTS 1
 
 Editor::Editor(Kronos *k) : kronos(k), name(""), comments("") {
-  char *dir = getenv("KRONUT_EDIT_SAVE_DIR");
-  if (dir) {
-    save_dir = dir;
-    if (dir[strlen(dir)-1] != '/')
-      save_dir += '/';
-  }
-  else
-    save_dir = string(getenv("HOME")) + "/kronut/";
 }
 
 int Editor::edit_current_slot(bool read_from_kronos) {

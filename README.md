@@ -21,6 +21,7 @@ Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.
 Kronut can't save the set list itself. Remember to do that.
 kronut> h
   e: edit current slot
+  r: re-edit (does not get data from Kronos)
   p: print current slot
   d: dump current slot
   h: this help (also '?')
@@ -46,28 +47,19 @@ The comment must start on the third line. (The second line will be ignored;
 it is blank when sent to your editor.) The comment will be truncated after
 512 characters.
 
-### Edit Files
-
-When a slot's name and comment are read from the Kronos, they are saved to a
-file in the directory defined by the environment variable
-`$KRONOS_EDIT_SAVE_DIR`, or "/tmp" if that is not defined. Files are saved
-in a set of subdirectories named with the set numbers "000" - "127", each
-with the name "NNN.txt", where NNN is the slot number within the set. Then
-your editor is told to open that file.
+### Too-Long Name or Comments
 
 Whenever a slot name or comment you enter too long, it is truncated before
-it is sent to the Kronos. When that happens, your original text is saved to
-a backup file named "NNN_original.txt". That way, if you want to re-edit the
-slot you'll have all that lovely text you added that was truncated.
+it is sent to the Kronos. When that happens, Kronut tells you and gives you
+a chance to re-open your editor with the longer data that you saved using
+the `r` command. That way, if you want to re-edit the slot you'll have all
+that lovely text you added that was truncated.
 
 ## Warnings
 
-Kronut doesn't know how to save the set list itself. After you've changed
-one or more slots, you must manually save the set list on the Kronos.
-
-The files that Kronut saved aren't magically kept in sync with your Kronos.
-If you edit a slot's comment on the Kronos, the file isn't updated until you
-edit that slot using Kronut.
+Kronut doesn't know how to tell the Kronos save the set list itself. After
+you've changed one or more slots, you must manually save the set list on the
+Kronos.
 
 ## A Note For Emacs Users
 
@@ -93,7 +85,3 @@ saving the buffer first. So I wrote this function:
 
 When this function is called, Kronut will print the error message "killed by
 buffer-kill-emacs" and nothing will get sent to the Kronos.
-
-# To Do
-
-- Warn when comments are too long (output file name perhaps?)

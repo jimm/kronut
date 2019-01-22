@@ -35,7 +35,6 @@ protected:
   Kronos *kronos;
   string name;
   string comments;
-  string save_dir;
 
   void read_maybe_dump(bool dump);
   void save_to_file();
