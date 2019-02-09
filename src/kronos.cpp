@@ -185,6 +185,7 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
   send_sysex(request_sysex, sizeof(request_sysex));
+  usleep(1);                    // segfault without this --- why?
   read_sysex();
   if (error_reply_seen())
     fprintf(stderr, "sysex error response: %s\n", error_reply_message());
