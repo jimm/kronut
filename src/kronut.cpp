@@ -61,12 +61,60 @@ CFStringRef cstr_to_cfstring(const char *str) {
   return CFStringCreateWithCString(kCFAllocatorDefault, str, kCFStringEncodingASCII);
 }
 
-// Copies name property of MIDIObject into buf.
-void name_of(MIDIObjectRef ref, char *buf) {
+void property_string_of(MIDIObjectRef ref, const CFStringRef property_const,
+                        char *buf)
+{
   CFStringRef pvalue;
-  MIDIObjectGetStringProperty(ref, kMIDIPropertyName, &pvalue);
+  MIDIObjectGetStringProperty(ref, property_const, &pvalue);
   CFStringGetCString(pvalue, buf, CFSTRING_BUF_SIZE, 0);
   CFRelease(pvalue);
+}
+
+// Copies name property of MIDIObject into buf.
+void name_of(MIDIObjectRef ref, char *buf) {
+  property_string_of(ref, kMIDIPropertyName, buf);
+}
+
+// Copies name property of MIDIObject into buf.
+void manufacturer_of(MIDIObjectRef ref, char *buf) {
+  property_string_of(ref, kMIDIPropertyManufacturer, buf);
+}
+
+// Copies name property of MIDIObject into buf.
+void model_of(MIDIObjectRef ref, char *buf) {
+  property_string_of(ref, kMIDIPropertyModel, buf);
+}
+
+int find_kronos_input_num() {
+  char val[CFSTRING_BUF_SIZE];
+  ItemCount i, ndev = MIDIGetNumberOfSources();
+
+  for (i = 0; i < ndev; ++i) {
+    MIDIEndpointRef end_ref = MIDIGetSource(i);
+    manufacturer_of(end_ref, val);
+    if (strcmp(val, "KORG INC.") == 0) {
+      model_of(end_ref, val);
+      if (strcmp(val, "KRONOS") == 0)
+        return i;
+    }
+  }
+  return -1;
+}
+
+int find_kronos_output_num() {
+  char val[CFSTRING_BUF_SIZE];
+  ItemCount i, ndev = MIDIGetNumberOfDestinations();
+
+  for (i = 0; i < ndev; ++i) {
+    MIDIEndpointRef end_ref = MIDIGetDestination(i);
+    manufacturer_of(end_ref, val);
+    if (strcmp(val, "KORG INC.") == 0) {
+      model_of(end_ref, val);
+      if (strcmp(val, "KRONOS") == 0)
+        return i;
+    }
+  }
+  return -1;
 }
 
 void print_sources_and_destinations() {
@@ -76,16 +124,32 @@ void print_sources_and_destinations() {
   printf("Inputs:\n");
   for (i = 0; i < ndev; ++i) {
     MIDIEndpointRef end_ref = MIDIGetSource(i);
+    printf("%3ld:", i);
+
+    model_of(end_ref, val);
+    printf(" %s", val);
+
     name_of(end_ref, val);
-    printf("%3ld: %s\n", i, val);
+    printf(", %s", val);
+
+    manufacturer_of(end_ref, val);
+    printf(" (%s)\n", val);
   }
 
   ndev = MIDIGetNumberOfDestinations();
   printf("Outputs\n");
   for (i = 0; i < ndev; ++i) {
     MIDIEndpointRef end_ref = MIDIGetDestination(i);
+    printf("%3ld:", i);
+
+    model_of(end_ref, val);
+    printf(" %s", val);
+
     name_of(end_ref, val);
-    printf("%3ld: %s\n", i, val);
+    printf(", %s", val);
+
+    manufacturer_of(end_ref, val);
+    printf(" (%s)\n", val);
   }
 }
 
@@ -233,6 +297,7 @@ void parse_command_line(int argc, char * const *argv, struct opts *opts) {
   };
 
   opts->list_devices = opts->testing = false;
+  opts->input_num = opts->output_num = -1;
   while ((ch = getopt_long(argc, argv, "lc:i:o:nh", longopts, 0)) != -1) {
     switch (ch) {
     case 'l':
@@ -268,6 +333,19 @@ int main(int argc, char * const *argv) {
     print_sources_and_destinations();
     exit(0);
   }
+
+  if (opts.input_num == -1)
+    opts.input_num = find_kronos_input_num();
+  if (opts.input_num == -1)
+    fprintf(stderr, "error: can't find Kronos input port number\n");
+
+  if (opts.output_num == -1)
+    opts.output_num = find_kronos_output_num();
+  if (opts.output_num == -1)
+    fprintf(stderr, "error: can't find Kronos output port number\n");
+
+  if (opts.input_num == -1 || opts.output_num == -1)
+    exit(1);
 
   Kronos *k = initialize(&opts);
   run(k);
