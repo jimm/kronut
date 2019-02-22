@@ -33,27 +33,6 @@ void midi_read_proc(const MIDIPacketList *pktlist, void *ref_con,
   ((Kronos *)ref_con)->receive_midi(pktlist);
 }
 
-// Returns a C string that is a newly allocated copy of cf_str.
-char * copy_cfstring(CFStringRef cf_str) {
-  if (cf_str == 0)
-    return 0;
-
-  CFIndex length = CFStringGetLength(cf_str);
-  CFIndex max_size =
-    CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingASCII) + 1;
-  char *buffer = (char *)malloc(max_size);
-  if (CFStringGetCString(cf_str, buffer, max_size, kCFStringEncodingASCII))
-    return buffer;
-
-  free(buffer);
-  return 0;
-}
-
-// Returns pointer to C string inside CFString.
-const char * cfstring_cstr_ptr(CFStringRef cf_str) {
-  return CFStringGetCStringPtr(cf_str, kCFStringEncodingASCII);
-}
-
 // Returns new CFString ref. Don't forget to call CFRelease(cf_str) when
 // you're done with it.
 CFStringRef cstr_to_cfstring(const char *str) {
