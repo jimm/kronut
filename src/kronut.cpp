@@ -204,7 +204,10 @@ void run(Kronos *k) {
   while (true) {
     printf("kronut> ");
     fflush(stdout);
-    fgets(buf, 32, stdin);
+    if (fgets(buf, 32, stdin) == 0) {
+      printf("\n");
+      return;
+    }
 
     switch (buf[0]) {
     case 'e': case 'r':
