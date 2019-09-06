@@ -45,8 +45,12 @@ void property_string_of(MIDIObjectRef ref, const CFStringRef property_const,
 {
   CFStringRef pvalue;
   MIDIObjectGetStringProperty(ref, property_const, &pvalue);
-  CFStringGetCString(pvalue, buf, CFSTRING_BUF_SIZE, 0);
-  CFRelease(pvalue);
+  if (pvalue == 0)
+    buf[0] = 0;
+  else {
+    CFStringGetCString(pvalue, buf, CFSTRING_BUF_SIZE, 0);
+    CFRelease(pvalue);
+  }
 }
 
 // Copies name property of MIDIObject into buf.
@@ -96,40 +100,34 @@ int find_kronos_output_num() {
   return -1;
 }
 
-void print_sources_and_destinations() {
+void print_endpoint_ref(long i, MIDIEndpointRef end_ref) {
   char val[CFSTRING_BUF_SIZE];
 
+  printf("%3ld: ", i);
+
+  model_of(end_ref, val);
+  if (val[0] != 0)
+    printf("%s, ", val);
+
+  name_of(end_ref, val);
+  printf("%s ", val);
+
+  manufacturer_of(end_ref, val);
+  if (val[0] != 0)
+    printf("(%s)", val);
+  printf("\n");
+}
+
+void print_sources_and_destinations() {
   ItemCount i, ndev = MIDIGetNumberOfSources();
   printf("Inputs:\n");
-  for (i = 0; i < ndev; ++i) {
-    MIDIEndpointRef end_ref = MIDIGetSource(i);
-    printf("%3ld:", i);
-
-    model_of(end_ref, val);
-    printf(" %s", val);
-
-    name_of(end_ref, val);
-    printf(", %s", val);
-
-    manufacturer_of(end_ref, val);
-    printf(" (%s)\n", val);
-  }
+  for (i = 0; i < ndev; ++i)
+    print_endpoint_ref(i, MIDIGetSource(i));
 
   ndev = MIDIGetNumberOfDestinations();
   printf("Outputs\n");
-  for (i = 0; i < ndev; ++i) {
-    MIDIEndpointRef end_ref = MIDIGetDestination(i);
-    printf("%3ld:", i);
-
-    model_of(end_ref, val);
-    printf(" %s", val);
-
-    name_of(end_ref, val);
-    printf(", %s", val);
-
-    manufacturer_of(end_ref, val);
-    printf(" (%s)\n", val);
-  }
+  for (i = 0; i < ndev; ++i)
+    print_endpoint_ref(i, MIDIGetDestination(i));
 }
 
 void cleanup_midi() {
