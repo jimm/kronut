@@ -156,7 +156,6 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
   if (error_reply_seen())
     fprintf(stderr, "sysex error response: %s\n", error_reply_message());
 
-  set_obj_dump_bank_and_index();
   int start = 7;
   int end = start;
   while (sysex[end] != EOX) ++end;
@@ -211,16 +210,12 @@ MIDIData * Kronos::read_object_dump(byte type, byte bank, int index) {
   if (error_reply_seen())
     fprintf(stderr, "sysex error response: %s\n", error_reply_message());
 
-  set_obj_dump_bank_and_index();
+  obj_dump_bank = sysex[6];
+  obj_dump_index = (sysex[7] << 7) + sysex[8];
   int start = 10;
   int end = start;
   while (sysex[end] != EOX) ++end;
   return new MIDIData(MD_INIT_MIDI, sysex + start, end - start);
-}
-
-void Kronos::set_obj_dump_bank_and_index() {
-  obj_dump_bank = sysex[6];
-  obj_dump_index = (sysex[7] << 7) + sysex[8];
 }
 
 void Kronos::dump_sysex(const char * const msg) {

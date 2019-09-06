@@ -50,7 +50,6 @@ protected:
   virtual KString * read_current_string(int obj_type, byte pad);
   virtual void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
   virtual void write_current_string(int obj_type, KString *kstr);
-  void set_obj_dump_bank_and_index();
 
   void clear_sysex_buffer();
   void append_sysex_byte(byte b);
