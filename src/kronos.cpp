@@ -198,26 +198,6 @@ void Kronos::write_current_slot_comments(KString *kstr) {
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
-// Reads object dump into sysex, assumed to be correct size.
-MIDIData * Kronos::read_object_dump(byte type, byte bank, int index) {
-  const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID, 0x30 + channel, KRONOS_DEVICE_ID,
-    FUNC_CODE_OBJ_DUMP_REQ, type, bank, (index >> 7) & 0x7f,
-    index & 0x7f, EOX
-  };
-  send_sysex(request_sysex, sizeof(request_sysex));
-  read_sysex();
-  if (error_reply_seen())
-    fprintf(stderr, "sysex error response: %s\n", error_reply_message());
-
-  obj_dump_bank = sysex[6];
-  obj_dump_index = (sysex[7] << 7) + sysex[8];
-  int start = 10;
-  int end = start;
-  while (sysex[end] != EOX) ++end;
-  return new MIDIData(MD_INIT_MIDI, sysex + start, end - start);
-}
-
 void Kronos::dump_sysex(const char * const msg) {
   dump_hex(sysex, sysex_length, msg);
 }
