@@ -256,6 +256,9 @@ void usage(const char *prog_name) {
        << "    -o or --output N" << endl
        << "        Output number" << endl
        << endl
+       << "    -c or --channel N" << endl
+       << "        Kronos general MIDI channel (1-16, default 1)" << endl
+       << endl
        << "    -n or --no-midi" << endl
        << "        No MIDI (ignores bad/unknown MIDI ports)" << endl
        << endl
@@ -284,7 +287,12 @@ void parse_command_line(int argc, char * const *argv, struct opts *opts) {
       opts->list_devices = true;
       break;
     case 'c':
-      opts->channel = atoi(optarg) - 1;
+      opts->channel = atoi(optarg) - 1; // 0-15
+      if (opts->channel < 0 || opts->channel > 15) {
+        fprintf(stderr, "error: channel must be 1-16\n");
+        usage(prog_name);
+        exit(1);
+      }
       break;
     case 'i':
       opts->input_num = atoi(optarg);

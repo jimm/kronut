@@ -34,8 +34,8 @@ Kronos *Kronos_instance() {
 
 // ================ allocation ================
 
-// channel 1-15
-Kronos::Kronos(byte chan) : channel(chan-1), receiving_sysex(false) {
+// chan must be 0-15
+Kronos::Kronos(byte chan) : channel(chan), receiving_sysex(false) {
   sysex = (byte *)malloc(SYSEX_CHUNK_SIZE);
   sysex_allocated_size = SYSEX_CHUNK_SIZE;
   sysex_length = 0;
@@ -147,7 +147,7 @@ const char * const Kronos::error_reply_message() {
 // Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID, 0x30 + 0, KRONOS_DEVICE_ID,
+    SYSEX, KORG_MANUFACTURER_ID, 0x30 + channel, KRONOS_DEVICE_ID,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, obj_type,
     EOX
   };
@@ -175,7 +175,7 @@ KString * Kronos::read_current_slot_comments() {
 void Kronos::write_current_string(int obj_type, KString *kstr) {
   byte request_sysex[kstr->midi_len + 8];
   const byte request_sysex_header[] = {
-    SYSEX, KORG_MANUFACTURER_ID, 0x30 + 0, KRONOS_DEVICE_ID,
+    SYSEX, KORG_MANUFACTURER_ID, 0x30 + channel, KRONOS_DEVICE_ID,
     FUNC_CODE_CURR_OBJ_DUMP, obj_type, 0
   };
 
