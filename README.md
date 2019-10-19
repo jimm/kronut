@@ -11,6 +11,12 @@ To compile the code, run `make`. To run the tests, run `make test`.
 
 # Running Kronut
 
+Run `./kronut --help` to see all of the command line options.
+
+Kronut tries to auto-detect the Kronos' MIDI input and output ports, but if
+it can't find them you can specify them on the command line. To list all of
+the available input and output ports, run `./kronut --list`.
+
 Here is a sample Kronut session. There's not much to see, since when you
 type "e <return>" your editor is opened and all the text editing action
 takes place there.
