@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <sys/types.h>
+
 typedef unsigned char byte;
 
 char * c_str(char *p, size_t len);

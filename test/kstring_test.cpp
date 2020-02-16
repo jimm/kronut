@@ -1,28 +1,31 @@
 #include <string.h>
+#include "catch.hpp"
 #include "test_helper.h"
-#include "kstring_test.h"
+#include "../src/kstring.h"
 
-void test_ks_m2i_len() {
+#define CATCH_CATEGORY "[kstring]"
+
+TEST_CASE("ks_m2i_len", CATCH_CATEGORY) {
   KString kstr(MD_INIT_MIDI, midi_letters, 28, 0);
-  tassert(kstr.internal_len == 24, "bad m2i len conversion");
+  REQUIRE(kstr.internal_len == 24);
 }
 
-void test_ks_i2m_len() {
+TEST_CASE("ks_i2m_len", CATCH_CATEGORY) {
   KString kstr(MD_INIT_INTERNAL, internal_letters, 24, 0);
-  tassert(kstr.midi_len == 28, "bad i2m len conversion");
+  REQUIRE(kstr.midi_len == 28);
 }
 
-void test_ks_init_with_midi() {
+TEST_CASE("ks_init_with_midi", CATCH_CATEGORY) {
   KString kstr(MD_INIT_MIDI, midi_letters, 28, 0);
-  tassert(memcmp(kstr.internal_bytes, internal_letters, 24) == 0, "bad m2i conversion");
+  REQUIRE(memcmp(kstr.internal_bytes, internal_letters, 24) == 0);
 }
 
-void test_ks_init_with_internal() {
+TEST_CASE("ks_init_with_internal", CATCH_CATEGORY) {
   KString kstr(MD_INIT_INTERNAL, internal_letters, 28, 0);
-  tassert(memcmp(kstr.midi_bytes, midi_letters, 24) == 0, "bad i2m conversion");
+  REQUIRE(memcmp(kstr.midi_bytes, midi_letters, 24) == 0);
 }
 
-void test_ks_padding() {
+TEST_CASE("ks_padding", CATCH_CATEGORY) {
   internal_letters[2] = '\r';
   internal_letters[22] = ' ';
   internal_letters[23] = ' ';
@@ -31,46 +34,34 @@ void test_ks_padding() {
   internal_letters[22] = 'w';
   internal_letters[23] = 'x';
   char *c_str = kstr.str();
-  tassert(c_str[2] = '\n', "line ending converted incorrectly");
-  tassert(c_str[22] == 0, "padding not converted to 0 at 22");
-  tassert(c_str[23] == 0, "padding not converted to 0 at 23");
+  REQUIRE(c_str[2] == '\n');
+  REQUIRE(c_str[22] == 0);
+  REQUIRE(c_str[23] == 0);
 }
 
-void test_ks_truncation() {
+TEST_CASE("ks_truncation", CATCH_CATEGORY) {
   KString kstr(MD_INIT_MIDI, midi_letters, 28, 0);
   kstr.set_str("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
-  tassert(kstr.internal_len == 24, 0);
-  tassert(kstr.midi_len == 28, 0);
-  tassert(strcmp(kstr.str(), "abcdefghijklmnopqrstuvwx") == 0,
-          "not truncated properly");
+  REQUIRE(kstr.internal_len == 24);
+  REQUIRE(kstr.midi_len == 28);
+  REQUIRE(strcmp(kstr.str(), "abcdefghijklmnopqrstuvwx") == 0);
 }
 
-void test_ks_set_str() {
+TEST_CASE("ks_set_str", CATCH_CATEGORY) {
   KString kstr(MD_INIT_INTERNAL, internal_letters, 24, ' ');
   kstr.set_str("hello\nworld");
-  tassert(strcmp(kstr.str(), "hello\nworld") == 0, "bad str copy");
+  REQUIRE(strcmp(kstr.str(), "hello\nworld") == 0);
   byte *ibytes = kstr.internal_bytes;
-  tassert(ibytes[0] == 'h', 0);
-  tassert(ibytes[5] == '\r', "bad newline conversion");
-  tassert(ibytes[11] == ' ', "bad padding at end of string");
-  tassert(ibytes[23] == ' ', "bad padding at end of bytes");
+  REQUIRE(ibytes[0] == 'h');
+  REQUIRE(ibytes[5] == '\r');
+  REQUIRE(ibytes[11] == ' ');
+  REQUIRE(ibytes[23] == ' ');
 }
 
-void test_ks_crlf() {
+TEST_CASE("ks_crlf", CATCH_CATEGORY) {
   byte midi_str[] = {
     0, 'a', 'b', 'c', 0x0d, 0x0a, 'd', 'e'
   };
   KString kstr(MD_INIT_MIDI, midi_str, 8, 0);
-  tassert(strcmp(kstr.str(), "abc\nde") == 0, "bad cr/lf conversion");
-}
-
-void test_kstring() {
-  test_run(test_ks_m2i_len);
-  test_run(test_ks_i2m_len);
-  test_run(test_ks_init_with_midi);
-  test_run(test_ks_init_with_internal);
-  test_run(test_ks_padding);
-  test_run(test_ks_truncation);
-  test_run(test_ks_set_str);
-  test_run(test_ks_crlf);
+  REQUIRE(strcmp(kstr.str(), "abc\nde") == 0);
 }

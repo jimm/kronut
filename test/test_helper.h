@@ -1,7 +1,6 @@
 #ifndef TEST_HELPER_H
 #define TEST_HELPER_H
 
-#include "kronut_test.h"
 #include "../src/utils.h"       // in case you want to call dump_hex
 
 typedef unsigned char byte;

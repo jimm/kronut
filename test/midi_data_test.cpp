@@ -1,30 +1,26 @@
 #include <string.h>
+#include "catch.hpp"
 #include "test_helper.h"
-#include "midi_data_test.h"
+#include "../src/midi_data.h"
 
-void test_md_m2i_len() {
+#define CATCH_CATEGORY "[midi-data]"
+
+TEST_CASE("md_m2i_len", CATCH_CATEGORY) {
   MIDIData md(MD_INIT_MIDI, midi_letters, 28);
-  tassert(md.internal_len == 24, "bad m2i len conversion");
+  REQUIRE(md.internal_len == 24);
 }
 
-void test_md_i2m_len() {
+TEST_CASE("md_i2m_len", CATCH_CATEGORY) {
   MIDIData md(MD_INIT_INTERNAL, internal_letters, 24);
-  tassert(md.midi_len == 28, "bad i2m len conversion");
+  REQUIRE(md.midi_len == 28);
 }
 
-void test_md_init_with_midi() {
+TEST_CASE("md_init_with_midi", CATCH_CATEGORY) {
   MIDIData md(MD_INIT_MIDI, midi_letters, 28);
-  tassert(memcmp(md.internal_bytes, internal_letters, 24) == 0, "bad m2i conversion");
+  REQUIRE(memcmp(md.internal_bytes, internal_letters, 24) == 0);
 }
 
-void test_md_init_with_internal() {
+TEST_CASE("md_init_with_internal", CATCH_CATEGORY) {
   MIDIData md(MD_INIT_INTERNAL, internal_letters, 28);
-  tassert(memcmp(md.midi_bytes, midi_letters, 24) == 0, "bad i2m conversion");
-}
-
-void test_midi_data() {
-  test_run(test_md_m2i_len);
-  test_run(test_md_i2m_len);
-  test_run(test_md_init_with_midi);
-  test_run(test_md_init_with_internal);
+  REQUIRE(memcmp(md.midi_bytes, midi_letters, 24) == 0);
 }

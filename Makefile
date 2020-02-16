@@ -1,7 +1,7 @@
 NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
 MACOS_VER = 10.9
-CPPFLAGS += -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
+CPPFLAGS += -std=c++11 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
 LIBS = -framework AudioToolbox -framework CoreMIDI -framework Foundation \
 	-lc -lc++ -lncurses
 LDFLAGS += $(LIBS) -macosx_version_min $(MACOS_VER)
