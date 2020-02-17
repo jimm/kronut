@@ -147,8 +147,9 @@ const char * const Kronos::error_reply_message() {
 // Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID, 0x30 + channel, KRONOS_DEVICE_ID,
-    FUNC_CODE_CURR_OBJ_DUMP_REQ, obj_type,
+    SYSEX, KORG_MANUFACTURER_ID,
+    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
   send_sysex(request_sysex, sizeof(request_sysex));
@@ -175,8 +176,9 @@ KString * Kronos::read_current_slot_comments() {
 void Kronos::write_current_string(int obj_type, KString *kstr) {
   byte request_sysex[kstr->midi_len + 8];
   const byte request_sysex_header[] = {
-    SYSEX, KORG_MANUFACTURER_ID, 0x30 + channel, KRONOS_DEVICE_ID,
-    FUNC_CODE_CURR_OBJ_DUMP, obj_type, 0
+    SYSEX, KORG_MANUFACTURER_ID,
+    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(obj_type), 0
   };
 
   memcpy(request_sysex, request_sysex_header, 7); // start of sysex
