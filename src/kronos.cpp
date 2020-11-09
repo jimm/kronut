@@ -10,10 +10,13 @@
 #include "utils.h"
 
 #define SYSEX_CHUNK_SIZE 1024
+#define READ_SYSEX_POLL_SLEEP_MICROSECS 1000L
+#define READ_SYSEX_TIMEOUT_SECS 5
+#define TIMEOUT_ERROR_REPLY 100
 
 static Kronos *kronos_instance;
 
-static const char * const error_reply_messages[12] = {
+static const char * const error_reply_messages[] = {
   "no error",
   "parameter type specified is incorrect for current mode",
   "unknown param message type, unknown parameter id or index",
@@ -25,7 +28,9 @@ static const char * const error_reply_messages[12] = {
   "other error: program bank is wrong type for received program dump (Func 73, 75); invalid data in Preset Pattern Dump (Func 7B).",
   "target object is protected",
   "memory overflow",
-  "(unknown error code)"
+  "(unknown error code)",
+  // The following errors are kronut errors, not Kronos errors
+  "timeout"
 };
 
 Kronos *Kronos_instance() {
@@ -111,14 +116,33 @@ void Kronos::send_sysex(const byte * const sysex, const UInt32 bytes_to_send) {
 
 // Wait for next System Exclusive message to be read into `sysex`.
 void Kronos::read_sysex() {
-  // TODO time out
-  usleep(1);                   // segfault without this --- why?
-  while (sysex_length == 0)
-    usleep(10);
-  usleep(1);
-  while (receiving_sysex)
-    usleep(10);
-  usleep(1);                   // segfault without this --- why?
+  time_t t = time(nullptr);
+  time_t timeout_time;
+
+  timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
+  while (sysex_length == 0 && time(nullptr) < timeout_time)
+    usleep(READ_SYSEX_POLL_SLEEP_MICROSECS);
+  t = time(nullptr);
+  if (t >= timeout_time) {
+    fprintf(stderr, "timed out waiting for start of sysex\n");
+    sysex[4] = FUNC_CODE_REPLY; sysex[5] = TIMEOUT_ERROR_REPLY;
+    return;
+  }
+
+  size_t curr_sysex_length = sysex_length;
+  timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
+  while (receiving_sysex && time(nullptr) < timeout_time) {
+    usleep(READ_SYSEX_POLL_SLEEP_MICROSECS);
+    if (sysex_length > curr_sysex_length) {
+      // we're making progress; reset the clock
+      t = time(nullptr);
+      timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
+    }
+  }
+  if (time(nullptr) >= timeout_time) {
+    fprintf(stderr, "timed out waiting for end of sysex\n");
+    sysex[4] = FUNC_CODE_REPLY; sysex[5] = TIMEOUT_ERROR_REPLY;
+  }
 }
 
 bool Kronos::error_reply_seen() {
@@ -139,6 +163,8 @@ const char * const Kronos::error_reply_message() {
   case 64: error_index = 8; break;
   case 65: error_index = 9; break;
   case 66: error_index = 10; break;
+  // Kronut errors
+  case TIMEOUT_ERROR_REPLY: error_index = 12; break;
   default: error_index = 11; break;
   }
   return error_reply_messages[error_index];
