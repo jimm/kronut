@@ -10,9 +10,10 @@
 #include "utils.h"
 
 #define SYSEX_CHUNK_SIZE 1024
-#define READ_SYSEX_POLL_SLEEP_MICROSECS 1000L
 #define READ_SYSEX_TIMEOUT_SECS 5
 #define TIMEOUT_ERROR_REPLY 100
+
+#define is_realtime(b) ((b) >= CLOCK)
 
 static Kronos *kronos_instance;
 
@@ -69,7 +70,7 @@ void Kronos::receive_midi(const MIDIPacketList *packet_list) {
         append_sysex_byte(b);
         break;
       default:
-        if (receiving_sysex)
+        if (receiving_sysex && !is_realtime(b))
           append_sysex_byte(b);
         break;
       }
@@ -116,33 +117,10 @@ void Kronos::send_sysex(const byte * const sysex, const UInt32 bytes_to_send) {
 
 // Wait for next System Exclusive message to be read into `sysex`.
 void Kronos::read_sysex() {
-  time_t t = time(nullptr);
-  time_t timeout_time;
-
-  timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
-  while (sysex_length == 0 && time(nullptr) < timeout_time)
-    usleep(READ_SYSEX_POLL_SLEEP_MICROSECS);
-  t = time(nullptr);
-  if (t >= timeout_time) {
-    fprintf(stderr, "timed out waiting for start of sysex\n");
-    sysex[4] = FUNC_CODE_REPLY; sysex[5] = TIMEOUT_ERROR_REPLY;
-    return;
-  }
-
-  size_t curr_sysex_length = sysex_length;
-  timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
-  while (receiving_sysex && time(nullptr) < timeout_time) {
-    usleep(READ_SYSEX_POLL_SLEEP_MICROSECS);
-    if (sysex_length > curr_sysex_length) {
-      // we're making progress; reset the clock
-      t = time(nullptr);
-      timeout_time = t + READ_SYSEX_TIMEOUT_SECS;
-    }
-  }
-  if (time(nullptr) >= timeout_time) {
-    fprintf(stderr, "timed out waiting for end of sysex\n");
-    sysex[4] = FUNC_CODE_REPLY; sysex[5] = TIMEOUT_ERROR_REPLY;
-  }
+  while (!receiving_sysex && sysex_length == 0)
+    ;
+  while (receiving_sysex)
+    ;
 }
 
 bool Kronos::error_reply_seen() {
@@ -165,6 +143,7 @@ const char * const Kronos::error_reply_message() {
   case 66: error_index = 10; break;
   // Kronut errors
   case TIMEOUT_ERROR_REPLY: error_index = 12; break;
+  // anything else
   default: error_index = 11; break;
   }
   return error_reply_messages[error_index];
@@ -212,7 +191,6 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
   send_sysex(request_sysex, sizeof(request_sysex));
-  usleep(1);                    // segfault without this --- why?
   read_sysex();
   if (error_reply_seen())
     fprintf(stderr, "sysex error response: %s\n", error_reply_message());
