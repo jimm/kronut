@@ -9,7 +9,6 @@
 #include "set_list.h"
 #include "utils.h"
 
-#define SYSEX_CHUNK_SIZE 1024
 #define MOCK_BANK 2
 #define MOCK_PROG 12
 

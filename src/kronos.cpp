@@ -9,7 +9,6 @@
 #include "set_list.h"
 #include "utils.h"
 
-#define SYSEX_CHUNK_SIZE 1024
 #define READ_SYSEX_TIMEOUT_SECS 5
 #define TIMEOUT_ERROR_REPLY 100
 
@@ -41,15 +40,11 @@ Kronos *Kronos_instance() {
 // ================ allocation ================
 
 // chan must be 0-15
-Kronos::Kronos(byte chan) : channel(chan), receiving_sysex(false) {
-  sysex = (byte *)malloc(SYSEX_CHUNK_SIZE);
-  sysex_allocated_size = SYSEX_CHUNK_SIZE;
-  sysex_length = 0;
+Kronos::Kronos(byte chan) : channel(chan), sysex_state(idle) {
   kronos_instance = this;
 }
 
 Kronos::~Kronos() {
-  free(sysex);
   if (kronos_instance == this)
     kronos_instance = 0;
 }
@@ -61,17 +56,17 @@ void Kronos::receive_midi(const MIDIPacketList *packet_list) {
       byte b = packet->data[j];
       switch (b) {
       case SYSEX:
-        clear_sysex_buffer();
-        receiving_sysex = true;
-        append_sysex_byte(b);
+        sysex_state = receiving;
+        sysex.clear();
+        sysex.append(b);
         break;
       case EOX:
-        receiving_sysex = false;
-        append_sysex_byte(b);
+        sysex.append(b);
+        sysex_state = received;
         break;
       default:
-        if (receiving_sysex && !is_realtime(b))
-          append_sysex_byte(b);
+        if (sysex_state == receiving && !is_realtime(b))
+          sysex.append(b);
         break;
       }
     }
@@ -79,28 +74,16 @@ void Kronos::receive_midi(const MIDIPacketList *packet_list) {
   }
 }
 
-void Kronos::clear_sysex_buffer() {
-  sysex_length = 0;
-  receiving_sysex = false;
-}
-
-void Kronos::append_sysex_byte(byte b) {
-  if (sysex_length == sysex_allocated_size) {
-    sysex_allocated_size += sysex_allocated_size;
-    sysex = (byte *)realloc(sysex, sysex_allocated_size);
-  }
-  sysex[sysex_length++] = b;
-}
-
-void Kronos::send_sysex(const byte * const sysex, const UInt32 bytes_to_send) {
+void Kronos::send_sysex(const byte * const sysex_bytes, const UInt32 bytes_to_send) {
   // In anticipation of receiving a response (the Kronos always sends a
-  // response), we clear the sysex buffer.
-  clear_sysex_buffer();
+  // response), we clear the sysex buffer and start waiting.
+  sysex.clear();
+  sysex_state = waiting;
 
   MIDISysexSendRequest req;
 
   req.destination = output;
-  req.data = sysex;
+  req.data = sysex_bytes;
   req.bytesToSend = bytes_to_send;
   req.complete = false;
   req.completionProc = 0;
@@ -117,9 +100,7 @@ void Kronos::send_sysex(const byte * const sysex, const UInt32 bytes_to_send) {
 
 // Wait for next System Exclusive message to be read into `sysex`.
 void Kronos::read_sysex() {
-  while (!receiving_sysex && sysex_length == 0)
-    ;
-  while (receiving_sysex)
+  while (sysex_state != received && sysex_state != error)
     ;
 }
 
@@ -165,7 +146,7 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
   int start = 7;
   int end = start;
   while (sysex[end] != EOX) ++end;
-  return new KString(MD_INIT_MIDI, sysex + start, end - start, pad);
+  return new KString(MD_INIT_MIDI, sysex.data() + start, end - start, pad);
 }
 
 // Returns a newly allocated KString.
@@ -205,5 +186,5 @@ void Kronos::write_current_slot_comments(KString *kstr) {
 }
 
 void Kronos::dump_sysex(const char * const msg) {
-  dump_hex(sysex, sysex_length, msg);
+  dump_hex(sysex.data(), sysex.size(), msg);
 }

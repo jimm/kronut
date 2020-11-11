@@ -5,10 +5,19 @@
 #include "set_list.h"
 #include "midi_data.h"
 #include "kstring.h"
+#include "byte_data.h"
 
 using namespace std;
 
 typedef unsigned char byte;
+
+enum SysexState {
+  idle,
+  waiting,
+  receiving,
+  received,
+  error
+};
 
 class Kronos {
 public:
@@ -38,10 +47,8 @@ protected:
   MIDIEndpointRef input;
   MIDIEndpointRef output;
   byte channel;
-  bool receiving_sysex;
-  byte *sysex;
-  size_t sysex_allocated_size;
-  size_t sysex_length;
+  SysexState sysex_state;
+  ByteData sysex;
   byte obj_dump_bank;           // curr slot name/comment set list number
   int obj_dump_index;           // curr slot name/comment slot number
 
@@ -49,9 +56,6 @@ protected:
   virtual KString * read_current_string(int obj_type, byte pad);
   virtual void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
   virtual void write_current_string(int obj_type, KString *kstr);
-
-  void clear_sysex_buffer();
-  void append_sysex_byte(byte b);
 };
 
 #endif /* KRONOS_H */
