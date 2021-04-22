@@ -108,7 +108,8 @@ void Editor::load_from_file() {
 string Editor::trimmed(string s) {
   char buf[1024], *p;
 
-  strcpy(buf, s.c_str());
+  strncpy(buf, s.c_str(), 1023);
+  buf[1023] = 0;
   for (p = buf; *p && isspace(*p); ++p) ;
   for (char *q = p + strlen(p) -1; q >= p && isspace(*q); --q)
     *q = 0;
