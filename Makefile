@@ -4,7 +4,9 @@ MACOS_VER = 10.9
 CPPFLAGS += -std=c++11 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
 LIBS = -framework AudioToolbox -framework CoreMIDI -framework Foundation \
 	-lc -lc++
-LDFLAGS += $(LIBS) -macosx_version_min $(MACOS_VER)
+LDFLAGS += $(LIBS)
+CC = clang
+CXX = clang++
 
 prefix = /usr/local
 exec_prefix = $(prefix)
@@ -23,7 +25,7 @@ CATCH_CATEGORY ?= ""
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 -include $(C_SRC:%.c=%.d)
 -include $(CPP_SRC:%.cpp=%.d)
@@ -32,7 +34,7 @@ test: $(NAME)_test
 	./$(NAME)_test --use-colour no $(CATCH_CATEGORY)
 
 $(NAME)_test:	$(OBJS) $(TEST_OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
+	$(CXX) $(LDFLAGS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
 
 install:	$(bindir)/$(NAME)
 
