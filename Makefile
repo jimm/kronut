@@ -5,8 +5,6 @@ CPPFLAGS += -std=c++11 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
 LIBS = -framework AudioToolbox -framework CoreMIDI -framework Foundation \
 	-lc -lc++
 LDFLAGS += $(LIBS)
-CC = clang
-CXX = clang++
 
 prefix = /usr/local
 exec_prefix = $(prefix)
