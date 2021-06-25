@@ -37,6 +37,22 @@ void Editor::print_current_slot() {
   puts(comments.c_str());
 }
 
+void Editor::print_set_list_slot_names() {
+  char buf[BUFSIZ];
+
+  SetList *set_list = kronos->read_current_set_list();
+  memcpy(buf, set_list->name, SET_LIST_NAME_LEN);
+  buf[SET_LIST_NAME_LEN] = '\0';
+  printf("Set List: %s\n", buf);
+
+  for (int i = 0; i < 128; ++i) {
+    memcpy(buf, set_list->slots[i].name, SLOT_NAME_LEN);
+    buf[SLOT_NAME_LEN] = '\0';
+    printf("%3d\t%s\n", i + 1, buf);
+  }
+  delete set_list;
+}
+
 void Editor::read_maybe_dump(bool dump) {
   KString *kstr;
 

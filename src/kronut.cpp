@@ -227,8 +227,9 @@ void run(Kronos *k) {
     case 'p':
       editor.print_current_slot();
       break;
-    case 'q':
-      return;
+    case 's':
+      editor.print_set_list_slot_names();
+      break;
     case 'h': case '?':
       puts("  e: edit current slot");
       puts("  r: re-edit (does not get data from Kronos)");
@@ -237,6 +238,8 @@ void run(Kronos *k) {
       puts("  h: this help (also '?')");
       puts("  q: quit");
       break;
+    case 'q':
+      return;
     default:
       break;
     }

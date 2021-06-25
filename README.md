@@ -31,6 +31,7 @@ kronut> h
   p: print current slot
   d: dump current slot
   h: this help (also '?')
+  s: prints the names of each slot in the current set list
   q: quit
 kronut> e
 kronut> q
