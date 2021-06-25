@@ -230,11 +230,16 @@ void run(Kronos *k) {
     case 's':
       editor.print_set_list_slot_names();
       break;
+    case 'S':
+      editor.edit_current_set_list(true);
+      break;
     case 'h': case '?':
       puts("  e: edit current slot");
       puts("  r: re-edit (does not get data from Kronos)");
       puts("  p: print current slot");
       puts("  d: dump current slot");
+      puts("  s: print the names of each slot in the current set list");
+      puts("  S: edit current set list");
       puts("  h: this help (also '?')");
       puts("  q: quit");
       break;

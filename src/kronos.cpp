@@ -159,7 +159,7 @@ KString * Kronos::read_current_slot_comments() {
   return read_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, 0);
 }
 
-SetList * Kronos::read_current_set_list() {
+void Kronos::read_current_set_list(SetList &set_list) {
   const byte request_sysex[] = {
     SYSEX, KORG_MANUFACTURER_ID,
     static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
@@ -176,9 +176,7 @@ SetList * Kronos::read_current_set_list() {
   while (sysex[end] != EOX) ++end;
 
   MIDIData midi_data(MD_INIT_MIDI, &sysex.data()[start], end - start);
-  SetList *set_list = new SetList();
-  memcpy((void *)set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
-  return set_list;
+  memcpy((void *)&set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
 }
 
 void Kronos::write_current_string(int obj_type, KString *kstr) {
@@ -207,7 +205,24 @@ void Kronos::write_current_slot_comments(KString *kstr) {
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
-void Kronos::write_current_set_list(SetList * set_list) {
+void Kronos::write_current_set_list(SetList &set_list) {
+  MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
+
+  byte request_sysex[midi_data.midi_len + 8];
+  const byte request_sysex_header[] = {
+    SYSEX, KORG_MANUFACTURER_ID,
+    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(OBJ_TYPE_SET_LIST), 0
+  };
+
+  memcpy(request_sysex, request_sysex_header, 7); // start of sysex
+  memcpy(request_sysex + 7, midi_data.midi_bytes, midi_data.midi_len);
+  request_sysex[7 + midi_data.midi_len] = EOX;  // end of sysex
+
+  send_sysex(request_sysex, sizeof(request_sysex));
+  read_sysex();
+  if (error_reply_seen())
+    fprintf(stderr, "sysex error response: %s\n", error_reply_message());
 }
 
 void Kronos::dump_sysex(const char * const msg) {

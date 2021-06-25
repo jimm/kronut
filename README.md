@@ -31,7 +31,8 @@ kronut> h
   p: print current slot
   d: dump current slot
   h: this help (also '?')
-  s: prints the names of each slot in the current set list
+  s: print the names of each slot in the current set list
+  S: edit current set list
   q: quit
 kronut> e
 kronut> q
@@ -61,6 +62,10 @@ it is sent to the Kronos. When that happens, Kronut tells you and gives you
 a chance to re-open your editor with the longer data that you saved using
 the `r` command. That way, if you want to re-edit the slot you'll have all
 that lovely text you added that was truncated.
+
+## Editing a Set List
+
+TODO: write this section
 
 ## Warnings
 

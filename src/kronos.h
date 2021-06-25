@@ -30,8 +30,8 @@ public:
 
   virtual void receive_midi(const MIDIPacketList *pktlist);
 
-  SetList * read_current_set_list();
-  void write_current_set_list(SetList *set_list);
+  void read_current_set_list(SetList &set_list);
+  void write_current_set_list(SetList &set_list);
 
   KString * read_current_slot_name();
   KString * read_current_slot_comments();

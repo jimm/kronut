@@ -16,6 +16,7 @@ public:
   // Reads current slot's name and comment, saves to temp file, opens
   // editor. When editor returns, reads temp file and writes current slot.
   int edit_current_slot(bool read_from_kronos);
+  int edit_current_set_list(bool read_from_kronos);
 
   string &current_name() { return name; }
   string &current_comments() { return comments; }
@@ -36,11 +37,18 @@ protected:
   Kronos *kronos;
   string name;
   string comments;
+  SetList set_list;
 
   void read_maybe_dump(bool dump);
-  void save_to_file();
+
+  void save_slot_to_file();
+  void load_slot_from_file();
+
+  void save_set_list_to_file();
+  void load_set_list_from_file();
+
   virtual int edit_file();
-  void load_from_file();
+
   string trimmed(string s);
 };
 
