@@ -340,8 +340,10 @@ int main(int argc, char * const *argv) {
   if (opts.output_num == -1)
     fprintf(stderr, "error: can't find Kronos output port number\n");
 
-  if (opts.input_num == -1 || opts.output_num == -1)
+  if (opts.input_num == -1 || opts.output_num == -1) {
+    usage(prog_name);
     exit(1);
+  }
 
   Kronos *k = initialize(&opts);
   run(k);

@@ -17,6 +17,7 @@ public:
 
   TestEditor(Kronos *k) : Editor(k) {
     saved_text = "Slot Name\n\nSlot Comments\nAnd another line\n";
+    header_char = '#';          // force Markdown mode
   }
 
   int edit_file() {

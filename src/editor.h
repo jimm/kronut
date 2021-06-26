@@ -33,11 +33,14 @@ public:
   // Write current slot's name and comment.
   void write_slot();
 
+  void set_file_type(int file_type);
+
 protected:
   Kronos *kronos;
   string name;
   string comments;
   SetList set_list;
+  char header_char;
 
   void read_maybe_dump(bool dump);
 

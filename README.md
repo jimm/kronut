@@ -39,14 +39,28 @@ kronut> q
 $ 
 ```
 
+## Editing Files
+
+Kronut works by reading information from the Kronos, writing it to a file,
+letting you edit the file, then reading the edited file and sending the
+changes back to the Kronos.
+
+It finds the editor to open by first looking for the `$VISUAL` environment
+variable, then the `$EDITOR` environment variable, then defaulting to the
+command `vi`. You can also define `$KRONUT_VISUAL_OPTIONS`,
+`$KRONUT_EDITOR_OPTIONS`, or `$KRONUT_VI_OPTIONS` to have Kronut pass
+additional command line options to your editor of choice.
+
+Files are written in either the [Markdown](https://www.markdownguide.org/)
+or [Org Mode](https://orgmode.org/) format. The default is Markdown. To use
+Org Mode, set the environment variable `$KRONUT_FILE_MODE` to "org" (or any
+string beginning with the letter "o" or "O").
+
 ## Editing Slot Names and Comments
 
 After you start Kronut, typing `e` and hitting return will download the
-name and comment of the currently selected set list slot into a file and
-open it using the program specified by the `$VISUAL` or `$EDITOR`
-environment variables. When you are done editing the name and comment, the
-are sent back to the same set list slot. If the environment variable
-`$KRONUT_VISUAL_OPTIONS` is defined it will be passed to the editor command.
+name and comment of the currently selected set list slot, write it to a
+file, and open your editor so you can edit that file.
 
 The slot name must be on the first line. Names longer than 24 characters
 will be truncated to fit.
@@ -65,7 +79,16 @@ that lovely text you added that was truncated.
 
 ## Editing a Set List
 
-TODO: write this section
+Kronut will write the set list name as a level one header, then write each
+slot's name as a level two header and its comments as the body text of that
+level. Additionally it adds two lines after the comments which you must not
+edit that look like this for each slot:
+
+    ----
+    Original slot number: 12
+
+You must keep those lines with the comments when you move around songs. That
+is what lets Kronut reshuffle the slots after you save the file.
 
 ## Warnings
 

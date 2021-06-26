@@ -1,13 +1,22 @@
 #include <string.h>
 #include <ctype.h>
 #include <libgen.h>
+#include <unistd.h>
 #include "editor.h"
 
 #define EDITOR_TMPFILE "/tmp/kronut_editor.md"
 #define EDITOR_NAME 0
 #define EDITOR_COMMENTS 1
 
-Editor::Editor(Kronos *k) : kronos(k), name(""), comments("") {
+#define MARKDOWN_CHAR '#'
+#define ORG_MODE_CHAR '*'
+
+Editor::Editor(Kronos *k)
+  : kronos(k), name(""), comments(""), header_char(MARKDOWN_CHAR)
+{
+  char *env_value = getenv("KRONUT_FILE_MODE");
+  if (env_value != nullptr && (env_value[0] == 'o' || env_value[0] == 'O'))
+    header_char = ORG_MODE_CHAR;
 }
 
 int Editor::edit_current_slot(bool read_from_kronos) {
@@ -89,9 +98,9 @@ void Editor::read_maybe_dump(bool dump) {
 
 void Editor::save_slot_to_file() {
   FILE *fp = fopen(EDITOR_TMPFILE, "w");
-  fprintf(fp, "# Slot Name\n\n");
+  fprintf(fp, "%c Slot Name\n\n", header_char);
   fprintf(fp, "%s\n\n", name.c_str());
-  fprintf(fp, "# Comments\n\n");
+  fprintf(fp, "%c Comments\n\n", header_char);
   fprintf(fp, "%s\n", comments.c_str());
   fclose(fp);
 }
@@ -100,13 +109,13 @@ void Editor::save_set_list_to_file() {
   FILE *fp = fopen(EDITOR_TMPFILE, "w");
 
   KString set_list_name(MD_INIT_INTERNAL, (byte *)&set_list.name, SET_LIST_NAME_LEN, 0);
-  fprintf(fp, "# %s\n\n", set_list_name.str());
+  fprintf(fp, "%c %s\n\n", header_char, set_list_name.str());
 
   for (int i = 0; i < 128; ++i) {
     Slot &slot = set_list.slots[i];
 
     KString slot_name(MD_INIT_INTERNAL, (byte *)&slot.name, SLOT_NAME_LEN, 0);
-    fprintf(fp, "## %s\n\n", slot_name.str());
+    fprintf(fp, "%c%c %s\n\n", header_char, header_char, slot_name.str());
 
     KString slot_comments(MD_INIT_INTERNAL, (byte *)&slot.comments, SLOT_COMMENTS_LEN, 0);
     fprintf(fp, "%s\n\n", slot_comments.str());
@@ -145,11 +154,11 @@ void Editor::load_slot_from_file() {
 
   FILE *fp = fopen(EDITOR_TMPFILE, "r");
   while (fgets(line, 1024, fp) != 0) {
-    if (strncmp("# Slot Name", line, 11) == 0) {
+    if (line[0] == header_char && strncmp(" Slot Name", line+1, 10) == 0) {
       which = EDITOR_NAME;
       buf = "";
     }
-    else if (strncmp("# Comments", line, 10) == 0) {
+    else if (line[0] == header_char && strncmp(" Comments", line+1, 9) == 0) {
       which = EDITOR_COMMENTS;
       name = trimmed(buf);
       buf = "";
@@ -171,7 +180,7 @@ void Editor::load_set_list_from_file() {
 
   FILE *fp = fopen(EDITOR_TMPFILE, "r");
   while (fgets(line, BUFSIZ, fp) != 0) {
-    if (strncmp("# ", line, 2) == 0) {
+    if (line[0] == header_char && line[1] == ' ') {
       // Set List name
       name = trimmed(string(line + 2));
       memset(set_list.name, 0, SET_LIST_NAME_LEN);
@@ -179,7 +188,7 @@ void Editor::load_set_list_from_file() {
       if (len >= SET_LIST_NAME_LEN) len = SET_LIST_NAME_LEN;
       memcpy(new_set_list.name, trimmed(name).c_str(), len);
     }
-    else if (strncmp("## ", line, 3) == 0) {
+    else if (line[0] == header_char && line[1] == header_char && line[2] == ' ') {
       // Slot name, beginning of comments
       name = trimmed(string(line + 3));
       comments = "";
