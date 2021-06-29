@@ -31,9 +31,6 @@ MockKronos::~MockKronos() {
 KString * MockKronos::read_current_string(int obj_type, byte pad) {
   byte buf[512];
 
-  obj_dump_bank = MOCK_BANK;
-  obj_dump_index = MOCK_PROG;
-
   memset(buf, 0, 512);
   if (obj_type == OBJ_TYPE_SET_LIST_SLOT_NAME) {
     strcpy((char *)buf, "Slot Name");

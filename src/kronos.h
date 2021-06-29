@@ -49,8 +49,6 @@ protected:
   byte channel;
   SysexState sysex_state;
   ByteData sysex;
-  byte obj_dump_bank;           // curr slot name/comment set list number
-  int obj_dump_index;           // curr slot name/comment slot number
 
   virtual void read_sysex();
   virtual KString * read_current_string(int obj_type, byte pad);
