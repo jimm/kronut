@@ -3,6 +3,7 @@
 #include <libgen.h>
 #include <unistd.h>
 #include "editor.h"
+#include "slot_wrapper.h"
 
 #define EDITOR_TMPFILE "/tmp/kronut_editor.md"
 #define EDITOR_NAME 0
@@ -77,6 +78,29 @@ void Editor::print_set_list_slot_names() {
     memcpy(buf, set_list.slots[i].name, SLOT_NAME_LEN);
     buf[SLOT_NAME_LEN] = '\0';
     printf("%3d\t%s\n", i + 1, buf);
+  }
+}
+
+void Editor::print_set_list_slot_values() {
+  char buf[BUFSIZ];
+
+  kronos->read_current_set_list(set_list);
+  memcpy(buf, set_list.name, SET_LIST_NAME_LEN);
+  buf[SET_LIST_NAME_LEN] = '\0';
+  printf("Set List: %s\n", buf);
+
+  for (int i = 0; i < 128; ++i) {
+    Slot &slot = set_list.slots[i];
+    SlotWrapper sw(slot);
+
+    // memcpy(buf, slot.name, SLOT_NAME_LEN);
+    // buf[SLOT_NAME_LEN] = '\0';
+    printf("%3d\t%s\n", i + 1, sw.name().c_str());
+    printf("\t{t: %02x, b: %02x, i: %02x, ht: %02x, v: %02x, trk: %02x}\n",
+           slot.performance_type, slot.performance_bank, slot.performance_index,
+           slot.hold_time, slot.volume, slot.keyboard_track);
+
+    printf("\tcolor: %d, font: %d, xpose: %d\n", sw.color(), sw.font(), sw.xpose());
   }
 }
 

@@ -26,6 +26,7 @@ public:
   void print_current_slot();
   void dump_current_slot() { read_maybe_dump(true); }
   void print_set_list_slot_names();
+  void print_set_list_slot_values();
 
   // Read current slot's name and comment.
   void read_slot() { read_maybe_dump(false); }
