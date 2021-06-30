@@ -103,17 +103,3 @@ string SlotWrapper::comments() {
 void SlotWrapper::set_comments(string str) {
   string_to_chars(slot.comments, SLOT_COMMENTS_LEN, str);
 }
-
-string SlotWrapper::chars_to_string(byte *chars, int len) {
-  char buf[BUFSIZ];
-
-  memcpy(buf, chars, len);
-  buf[len] = '\0';
-  return string(buf);
-}
-
-void SlotWrapper::string_to_chars(byte *chars, int len, string str) {
-  memcpy(chars, str.c_str(), len);
-  if (str.size() < len)
-    memset(chars + str.size(), 0, len - str.size());
-}

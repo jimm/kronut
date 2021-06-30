@@ -3,8 +3,11 @@
 
 #include <string>
 #include "slot.h"
+#include "struct_wrapper.h"
 
 using namespace std;
+
+typedef unsigned char byte;
 
 // Color takes bits 2-5 of performance_type
 // Font takes bits
@@ -36,7 +39,7 @@ enum SlotFont {
   font_xl
 };
 
-class SlotWrapper {
+class SlotWrapper : public StructWrapper {
 public:
   Slot &slot;
 
@@ -74,10 +77,6 @@ public:
 
   string comments();
   void set_comments(string str);
-
-private:
-  string chars_to_string(byte *, int len);
-  void string_to_chars(byte *, int len, string str);
 };
 
 #endif /* SLOT_WRAPPER_H */
