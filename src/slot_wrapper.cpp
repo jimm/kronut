@@ -1,4 +1,11 @@
+#include <strstream>
 #include "slot_wrapper.h"
+
+const char * const SLOT_PERF_TYPE_NAMES[3] = {
+  "Program",
+  "Combination",
+  "Song"
+};
 
 const char * const SLOT_COLOR_NAMES[16] = {
   "Default",
@@ -23,6 +30,10 @@ const char * const SLOT_FONT_NAMES[5] = {
   "Small", "Extra Small", "Medium", "Large", "Extra Large"
 };
 
+const char * const SLOT_FONT_SHORT_NAMES[5] = {
+  "S", "XS", "M", "L", "XL"
+};
+
 string SlotWrapper::name() {
   return chars_to_string(slot.name, SLOT_NAME_LEN);
 }
@@ -31,12 +42,16 @@ void SlotWrapper::set_name(string str) {
   string_to_chars(slot.name, SLOT_NAME_LEN, str);
 }
 
-byte SlotWrapper::performance_type() {
-  return slot.performance_type & 0x03;
+SlotPerformanceType SlotWrapper::performance_type() {
+  return (SlotPerformanceType)(slot.performance_type & 0x03);
 }
 
-void SlotWrapper::set_performance_type(byte val) {
-  slot.performance_type = (slot.performance_type & 0xfc) + (val & 0x03);
+void SlotWrapper::set_performance_type(SlotPerformanceType val) {
+  slot.performance_type = (slot.performance_type & 0xfc) + ((int)val & 0x03);
+}
+
+const char * const SlotWrapper::performance_type_name() {
+  return SLOT_PERF_TYPE_NAMES[(int)performance_type()];
 }
 
 byte SlotWrapper::performance_bank() {
@@ -45,6 +60,33 @@ byte SlotWrapper::performance_bank() {
 
 void SlotWrapper::set_performance_bank(byte val) {
   slot.performance_bank = (slot.performance_bank & 0xe0) + (val & 0x1f);
+}
+
+string SlotWrapper::performance_bank_name() {
+  ostrstream ostream;
+
+  byte bank = performance_bank();
+  if (bank >= 0x11) {
+    ostream << "USER-";
+    if (bank >= 0x18) {
+      ostream << (char)('A' + bank - 0x18);
+      ostream << (char)('A' + bank - 0x18);
+    }
+    else
+      ostream << (char)('A' + bank - 0x11);
+    return ostream.str();
+  }
+  if (bank == 0x10)
+    return "g(d)";
+  if (bank >= 0x07) {
+    ostream << "g(" << (int)(bank - 0x07 + 1) << ')';
+    return ostream.str();
+  }
+  if (bank == 0x06)
+    return "GM";
+
+  ostream << "INT-" << (char)('A' + bank);
+  return ostream.str();
 }
 
 byte SlotWrapper::performance_index() {
@@ -100,6 +142,10 @@ SlotFont SlotWrapper::font() {
 
 const char * const SlotWrapper::font_name() {
   return SLOT_FONT_NAMES[font()];
+}
+
+const char * const SlotWrapper::font_short_name() {
+  return SLOT_FONT_SHORT_NAMES[font()];
 }
 
 void SlotWrapper::set_font(SlotFont f) {

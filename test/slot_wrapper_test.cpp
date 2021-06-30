@@ -126,4 +126,36 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
     sw.set_font(font_xl);
     REQUIRE(strcmp(sw.font_name(), "Extra Large") == 0);
   }
+
+  SECTION("bank names") {
+    sw.set_performance_bank(0x00);
+    REQUIRE(sw.performance_bank_name() == "INT-A");
+
+    sw.set_performance_bank(0x05);
+    REQUIRE(sw.performance_bank_name() == "INT-F");
+
+    sw.set_performance_bank(0x06);
+    REQUIRE(sw.performance_bank_name() == "GM");
+
+    sw.set_performance_bank(0x07);
+    REQUIRE(sw.performance_bank_name() == "g(1)");
+
+    sw.set_performance_bank(0x0f);
+    REQUIRE(sw.performance_bank_name() == "g(9)");
+
+    sw.set_performance_bank(0x10);
+    REQUIRE(sw.performance_bank_name() == "g(d)");
+
+    sw.set_performance_bank(0x11);
+    REQUIRE(sw.performance_bank_name() == "USER-A");
+
+    sw.set_performance_bank(0x17);
+    REQUIRE(sw.performance_bank_name() == "USER-G");
+
+    sw.set_performance_bank(0x18);
+    REQUIRE(sw.performance_bank_name() == "USER-AA");
+
+    sw.set_performance_bank(0x1e);
+    REQUIRE(sw.performance_bank_name() == "USER-GG");
+  }
 }

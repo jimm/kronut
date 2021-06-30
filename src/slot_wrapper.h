@@ -12,6 +12,12 @@ typedef unsigned char byte;
 // Color takes bits 2-5 of performance_type
 // Font takes bits
 
+enum SlotPerformanceType {
+  pt_program,
+  pt_combination,
+  pt_song
+};
+
 enum SlotColor {
   color_default,
   color_charcoal,
@@ -39,8 +45,10 @@ enum SlotFont {
   font_xl
 };
 
+extern const char * const SLOT_PERF_TYPE_NAMES[3];
 extern const char * const SLOT_COLOR_NAMES[16];
 extern const char * const SLOT_FONT_NAMES[5];
+extern const char * const SLOT_FONT_SHORT_NAMES[5];
 
 class SlotWrapper : public StructWrapper {
 public:
@@ -51,11 +59,13 @@ public:
   string name();
   void set_name(string str);
 
-  byte performance_type();
-  void set_performance_type(byte val);
+  SlotPerformanceType performance_type();
+  void set_performance_type(SlotPerformanceType val);
+  const char * const performance_type_name();
 
   byte performance_bank();
   void set_performance_bank(byte val);
+  string performance_bank_name();
 
   byte performance_index();
   void set_performance_index(byte val);
@@ -76,6 +86,7 @@ public:
   SlotFont font();
   void set_font(SlotFont f);
   const char * const font_name();
+  const char * const font_short_name();
 
   int xpose();
   void set_xpose(int xpose);

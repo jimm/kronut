@@ -24,6 +24,13 @@ typedef unsigned char byte;
  * xpose   perf bank
  * hi bits
  *
+ *   perf bank:
+ *     INT A - INT-F     = 0x00-0x05
+ *     GM                = 0x06
+ *     g(1) - g(9)       = 0x07-0x0f
+ *     g(d)              = 0x10
+ *     USER-A - USER-G   = 0x11-0x17
+ *     USER-AA - USER-GG = 0x18-1E
  *
  * performance index
  *  (all bits used (?))

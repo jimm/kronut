@@ -124,21 +124,23 @@ void Editor::save_slot_to_file() {
 }
 
 void Editor::save_set_list_to_file() {
+  SetListWrapper slw(set_list);
+
   FILE *fp = fopen(EDITOR_TMPFILE, "w");
 
-  KString set_list_name(MD_INIT_INTERNAL, (byte *)&set_list.name, SET_LIST_NAME_LEN, 0);
-  fprintf(fp, "%c %s\n\n", header_char, set_list_name.str());
+  fprintf(fp, "%c %s\n\n", header_char, slw.name().c_str());
 
   for (int i = 0; i < 128; ++i) {
     Slot &slot = set_list.slots[i];
+    SlotWrapper sw(slot);
 
-    KString slot_name(MD_INIT_INTERNAL, (byte *)&slot.name, SLOT_NAME_LEN, 0);
-    fprintf(fp, "%c%c %s\n\n", header_char, header_char, slot_name.str());
+    fprintf(fp, "%c%c %s\n\n", header_char, header_char, sw.name().c_str());
 
-    KString slot_comments(MD_INIT_INTERNAL, (byte *)&slot.comments, SLOT_COMMENTS_LEN, 0);
-    fprintf(fp, "%s\n\n", slot_comments.str());
+    fprintf(fp, "%c%c%c Comments \n\n", header_char, header_char, header_char);
+    fprintf(fp, "%s\n\n", sw.comments().c_str());
 
-    fprintf(fp, "----\n");
+    fprintf(fp, "%c%c%c Data\n\n", header_char, header_char, header_char);
+    // FIXME
     fprintf(fp, "Original slot number: %d\n\n", i);
   }
 
@@ -191,6 +193,7 @@ void Editor::load_slot_from_file() {
 void Editor::load_set_list_from_file() {
   char line[BUFSIZ];
   SetList new_set_list;
+  SetListWrapper slw(new_set_list);
   long len;
   int slot_number = 0;
 
@@ -201,10 +204,7 @@ void Editor::load_set_list_from_file() {
     if (line[0] == header_char && line[1] == ' ') {
       // Set List name
       name = trimmed(string(line + 2));
-      memset(set_list.name, 0, SET_LIST_NAME_LEN);
-      len = name.size();
-      if (len >= SET_LIST_NAME_LEN) len = SET_LIST_NAME_LEN;
-      memcpy(new_set_list.name, trimmed(name).c_str(), len);
+      slw.set_name(name);
     }
     else if (line[0] == header_char && line[1] == header_char && line[2] == ' ') {
       // Slot name, beginning of comments
@@ -216,21 +216,16 @@ void Editor::load_set_list_from_file() {
     }
     else if (strncmp("Original slot number: ", line, 22) == 0) {
       Slot &slot = new_set_list.slots[slot_number];
+      SlotWrapper sw(slot);
       int orig_slot_number = atoi(line + 22);
 
       // copy original slot into this slot position
       memcpy((void *)&slot, (void *)&set_list.slots[orig_slot_number], sizeof(Slot));
 
-      // overwrite slot name
-      memset(slot.name, 0, SLOT_NAME_LEN);
-      len = name.size();
-      if (len > SLOT_NAME_LEN) len = SLOT_NAME_LEN;
-      memcpy(slot.name, name.c_str(), len);
+      sw.set_name(name);
+      sw.set_comments(trimmed(comments));
 
-      // overwrite comments
-      KString kstr_comments(MD_INIT_INTERNAL, (byte *)"", SLOT_COMMENTS_LEN, 0);
-      kstr_comments.set_str(trimmed(comments).c_str()); // handles newlines
-      memcpy(slot.comments, kstr_comments.internal_bytes, SLOT_COMMENTS_LEN);
+      // FIXME all the other values
 
       ++slot_number;
     }
