@@ -54,6 +54,8 @@ protected:
   virtual int edit_file();
 
   string trimmed(string s);
+
+  bool is_header(int n, char *line);
 };
 
 #endif /* EDITOR_H */

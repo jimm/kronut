@@ -136,11 +136,15 @@ void Editor::save_set_list_to_file() {
 
     fprintf(fp, "%c%c %s\n\n", header_char, header_char, sw.name().c_str());
 
-    fprintf(fp, "%c%c%c Comments \n\n", header_char, header_char, header_char);
     fprintf(fp, "%s\n\n", sw.comments().c_str());
 
     fprintf(fp, "%c%c%c Data\n\n", header_char, header_char, header_char);
-    // FIXME
+    fprintf(fp, "%s %s %03d\n",
+            sw.performance_type_name(),
+            sw.performance_bank_name().c_str(),
+            sw.performance_index());
+    fprintf(fp, "Transpose: %d\n", sw.xpose());
+
     fprintf(fp, "Original slot number: %d\n\n", i);
   }
 
@@ -196,23 +200,25 @@ void Editor::load_set_list_from_file() {
   SetListWrapper slw(new_set_list);
   long len;
   int slot_number = 0;
+  bool collect_comments = false;
 
   memcpy((void *)&new_set_list, (void *)&set_list, sizeof(SetList));
 
   FILE *fp = fopen(EDITOR_TMPFILE, "r");
   while (fgets(line, BUFSIZ, fp) != 0) {
-    if (line[0] == header_char && line[1] == ' ') {
+    if (is_header(1, line)) {
       // Set List name
       name = trimmed(string(line + 2));
       slw.set_name(name);
     }
-    else if (line[0] == header_char && line[1] == header_char && line[2] == ' ') {
+    else if (is_header(2, line)) {
       // Slot name, beginning of comments
       name = trimmed(string(line + 3));
       comments = "";
+      collect_comments = true;
     }
-    else if (strncmp("----", line, 4) == 0) {
-      // noop
+    else if (is_header(3, line)) {
+      collect_comments = false;
     }
     else if (strncmp("Original slot number: ", line, 22) == 0) {
       Slot &slot = new_set_list.slots[slot_number];
@@ -230,7 +236,8 @@ void Editor::load_set_list_from_file() {
       ++slot_number;
     }
     else {
-      comments += line;
+      if (collect_comments)
+        comments += line;
     }
   }
   fclose(fp);
@@ -265,4 +272,11 @@ void Editor::write_slot() {
   delete kstr;
   if (kronos->error_reply_seen()) // error already printed
     return;
+}
+
+bool Editor::is_header(int n, char *line) {
+  for (int i = 0; i < n; ++i)
+    if (line[i] != header_char)
+      return false;
+  return line[n] == ' ';
 }
