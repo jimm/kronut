@@ -7,6 +7,45 @@
 
 typedef unsigned char byte;
 
+/*
+ * performance type
+ *
+ *  7 6 5 4 3 2 1 0
+ *  |_| |_____| |_|
+ * font  color  type
+ * low 2
+ * bits
+ *
+ *
+ * performance bank
+ *
+ *  7 6 5 4 3 2 1 0
+ *  |___| |_______|
+ * xpose   perf bank
+ * hi bits
+ *
+ *
+ * performance index
+ *  (all bits used (?))
+ *
+ *
+ * hold time
+ *  (all bits used (?))
+ *
+ *
+ * volume
+ *  (all bits used)
+ *
+ *
+ * keyboard track
+ *
+ *  7 6 5 4 3 2 1 0
+ *  |___| | |_____|
+ *  xpose |  kbd track
+ *  low   |
+ *       font high bit
+ */
+
 struct Slot {
   byte name[SLOT_NAME_LEN];
   byte performance_type;
