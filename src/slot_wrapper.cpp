@@ -1,5 +1,28 @@
 #include "slot_wrapper.h"
 
+const char * const SLOT_COLOR_NAMES[16] = {
+  "Default",
+  "Charcoal",
+  "Brick",
+  "Burgundy",
+  "Ivy",
+  "Olive",
+  "Gold",
+  "Cacao",
+  "Indigo",
+  "Navy",
+  "Rose",
+  "Lavender",
+  "Azure",
+  "Denim",
+  "Silver",
+  "Slate"
+};
+
+const char * const SLOT_FONT_NAMES[5] = {
+  "Small", "Extra Small", "Medium", "Large", "Extra Large"
+};
+
 string SlotWrapper::name() {
   return chars_to_string(slot.name, SLOT_NAME_LEN);
 }
@@ -61,6 +84,10 @@ SlotColor SlotWrapper::color() {
   return (SlotColor)(val);
 }
 
+const char * const SlotWrapper::color_name() {
+  return SLOT_COLOR_NAMES[color()];
+}
+
 void SlotWrapper::set_color(SlotColor c) {
   slot.performance_type = (slot.performance_type & 0xc3) + ((c << 2) & 0x3c);
 }
@@ -69,6 +96,10 @@ SlotFont SlotWrapper::font() {
   if (slot.keyboard_track & 0x10)
     return font_xl;
   return (SlotFont)((slot.performance_type >> 6) & 0x03);
+}
+
+const char * const SlotWrapper::font_name() {
+  return SLOT_FONT_NAMES[font()];
 }
 
 void SlotWrapper::set_font(SlotFont f) {

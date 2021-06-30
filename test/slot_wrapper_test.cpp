@@ -107,4 +107,23 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
     sw.set_font(font_xl);
     REQUIRE(sw.font() == font_xl);
   }
+
+  SECTION("color names") {
+    sw.set_color(color_default);
+    REQUIRE(strcmp(sw.color_name(), "Default") == 0);
+
+    sw.set_color(color_olive);
+    REQUIRE(strcmp(sw.color_name(), "Olive") == 0);
+  }
+
+  SECTION("font names") {
+    sw.set_font(font_s);
+    REQUIRE(strcmp(sw.font_name(), "Small") == 0);
+
+    sw.set_font(font_m);
+    REQUIRE(strcmp(sw.font_name(), "Medium") == 0);
+
+    sw.set_font(font_xl);
+    REQUIRE(strcmp(sw.font_name(), "Extra Large") == 0);
+  }
 }

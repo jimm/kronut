@@ -94,7 +94,7 @@ void Editor::print_set_list_slot_values() {
            slot.performance_type, slot.performance_bank, slot.performance_index,
            slot.hold_time, slot.volume, slot.keyboard_track);
 
-    printf("\tcolor: %d, font: %d, xpose: %d\n", sw.color(), sw.font(), sw.xpose());
+    printf("\tcolor: %s, font: %s, xpose: %d\n", sw.color_name(), sw.font_name(), sw.xpose());
   }
 }
 

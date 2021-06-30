@@ -39,6 +39,9 @@ enum SlotFont {
   font_xl
 };
 
+extern const char * const SLOT_COLOR_NAMES[16];
+extern const char * const SLOT_FONT_NAMES[5];
+
 class SlotWrapper : public StructWrapper {
 public:
   Slot &slot;
@@ -68,9 +71,11 @@ public:
 
   SlotColor color();
   void set_color(SlotColor c);
+  const char * const color_name();
 
   SlotFont font();
   void set_font(SlotFont f);
+  const char * const font_name();
 
   int xpose();
   void set_xpose(int xpose);
