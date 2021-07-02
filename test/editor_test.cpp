@@ -4,6 +4,7 @@
 #include "catch.hpp"
 #include "test_helper.h"
 #include "../src/editor.h"
+#include "../src/edit_file.h"
 #include "../src/mock_kronos.h"
 
 #define CATCH_CATEGORY "[editor]"
@@ -17,13 +18,13 @@ public:
 
   TestEditor(Kronos *k) : Editor(k) {
     saved_text = "Slot Name\n\nSlot Comments\nAnd another line\n";
-    header_char = '#';          // force Markdown mode
+    file = new MarkdownEditFile(); // force Markdown mode
   }
 
   int edit_file() {
-    FILE *fp = fopen(SAVE_FILE, "w");
-    fprintf(fp, "%s", saved_text.c_str());
-    fclose(fp);
+    file->open("w");
+    file->puts(saved_text.c_str());
+    file->close();
     return 0;
   }
 
@@ -34,12 +35,14 @@ public:
 };
 
 TEST_CASE("edit current slot saves", CATCH_CATEGORY) {
+  char buf[BUFSIZ], *env_value;
   MockKronos mk = MockKronos(0);
   TestEditor ed = TestEditor(&mk);
 
   string file_text = "# Slot Name\n\nKronut Rules\n\n# Comments\n\nline one\nline B\n  \n \n";
   ed.set_saved_text(file_text);
   int status = ed.edit_current_slot(true);
+
   REQUIRE(status == EDITOR_OK);
   REQUIRE(strcmp(ed.c_name(), "Kronut Rules") == 0);
   REQUIRE(strcmp(ed.c_comments(), "line one\nline B") == 0);

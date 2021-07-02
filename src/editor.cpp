@@ -5,20 +5,19 @@
 #include "editor.h"
 #include "set_list_wrapper.h"
 #include "slot_wrapper.h"
+#include "edit_file.h"
 
-#define EDITOR_TMPFILE "/tmp/kronut_editor.md"
 #define EDITOR_NAME 0
 #define EDITOR_COMMENTS 1
 
-#define MARKDOWN_CHAR '#'
-#define ORG_MODE_CHAR '*'
-
 Editor::Editor(Kronos *k)
-  : kronos(k), name(""), comments(""), header_char(MARKDOWN_CHAR)
+  : kronos(k), name(""), comments("")
 {
   char *env_value = getenv("KRONUT_FILE_MODE");
   if (env_value != nullptr && (env_value[0] == 'o' || env_value[0] == 'O'))
-    header_char = ORG_MODE_CHAR;
+    file = new OrgModeEditFile();
+  else
+    file = new MarkdownEditFile();
 }
 
 int Editor::edit_current_slot(bool read_from_kronos) {
@@ -29,7 +28,7 @@ int Editor::edit_current_slot(bool read_from_kronos) {
   int status = edit_file();
   if (status == 0) {
     load_slot_from_file();
-    remove(EDITOR_TMPFILE);
+    file->rm();
 
     if (name_too_long() || comments_too_long())
       return EDITOR_TOO_LONG;
@@ -49,7 +48,7 @@ int Editor::edit_current_set_list(bool read_from_kronos) {
   int status = edit_file();
   if (status == 0) {
     load_set_list_from_file();
-    remove(EDITOR_TMPFILE);
+    file->rm();
 
     printf("Sending set list to Kronos. This will take a while...\n");
     kronos->write_current_set_list(set_list);
@@ -115,40 +114,44 @@ void Editor::read_maybe_dump(bool dump) {
 }
 
 void Editor::save_slot_to_file() {
-  FILE *fp = fopen(EDITOR_TMPFILE, "w");
-  fprintf(fp, "%c Slot Name\n\n", header_char);
-  fprintf(fp, "%s\n\n", name.c_str());
-  fprintf(fp, "%c Comments\n\n", header_char);
-  fprintf(fp, "%s\n", comments.c_str());
-  fclose(fp);
+  file->open("w");
+  file->header(1, "Slot Name");
+  file->text(name);
+  file->header(1, "Comments");
+  file->text(comments);
+  file->close();
 }
 
 void Editor::save_set_list_to_file() {
+  char buf[BUFSIZ];
   SetListWrapper slw(set_list);
 
-  FILE *fp = fopen(EDITOR_TMPFILE, "w");
-
-  fprintf(fp, "%c %s\n\n", header_char, slw.name().c_str());
+  file->open("w");
+  file->header(1, slw.name());
 
   for (int i = 0; i < 128; ++i) {
     Slot &slot = set_list.slots[i];
     SlotWrapper sw(slot);
 
-    fprintf(fp, "%c%c %s\n\n", header_char, header_char, sw.name().c_str());
+    file->header(2, sw.name());
+    file->text(sw.comments());
 
-    fprintf(fp, "%s\n\n", sw.comments().c_str());
-
-    fprintf(fp, "%c%c%c Data\n\n", header_char, header_char, header_char);
-    fprintf(fp, "%s %s %03d\n",
+    file->header(3, "Data");
+    sprintf(buf, "%s %s %03d",
             sw.performance_type_name(),
             sw.performance_bank_name().c_str(),
             sw.performance_index());
-    fprintf(fp, "Transpose: %d\n", sw.xpose());
+    file->puts(buf);
 
-    fprintf(fp, "Original slot number: %d\n\n", i);
+    sprintf(buf, "Transpose: %d\n", sw.xpose());
+    file->puts(buf);
+
+    sprintf(buf, "Original slot number: %d", i);
+    file->puts(buf);
+    file->line();
   }
 
-  fclose(fp);
+  file->close();
 }
 
 int Editor::edit_file() {
@@ -166,7 +169,7 @@ int Editor::edit_file() {
   }
   if (options == 0)
     options = (char *)"";
-  sprintf(buf, "%s %s %s 2>&1", editor, options, EDITOR_TMPFILE);
+  sprintf(buf, "%s %s %s 2>&1", editor, options, file->path().c_str());
   return system(buf);
 }
 
@@ -174,24 +177,23 @@ int Editor::edit_file() {
 void Editor::load_slot_from_file() {
   int which = -1;
   string buf;
-  char line[1024];
 
-  FILE *fp = fopen(EDITOR_TMPFILE, "r");
-  while (fgets(line, 1024, fp) != 0) {
-    if (line[0] == header_char && strncmp(" Slot Name", line+1, 10) == 0) {
+  file->open("r");
+  while (file->gets() != 0) {
+    if (file->is_header(1) && file->header_text(1) == "Slot Name") {
       which = EDITOR_NAME;
       buf = "";
     }
-    else if (line[0] == header_char && strncmp(" Comments", line+1, 9) == 0) {
+    else if (file->is_header(1) && file->header_text(1) == "Comments") {
       which = EDITOR_COMMENTS;
       name = trimmed(buf);
       buf = "";
     }
     else if (which != -1)
-      buf += line;
+      buf += file->line();
   }
   comments = trimmed(buf);
-  fclose(fp);
+  file->close();
 }
 
 void Editor::load_set_list_from_file() {
@@ -204,26 +206,26 @@ void Editor::load_set_list_from_file() {
 
   memcpy((void *)&new_set_list, (void *)&set_list, sizeof(SetList));
 
-  FILE *fp = fopen(EDITOR_TMPFILE, "r");
-  while (fgets(line, BUFSIZ, fp) != 0) {
-    if (is_header(1, line)) {
+  file->open("r");
+  while (file->gets() != 0) {
+    if (file->is_header(1)) {
       // Set List name
-      name = trimmed(string(line + 2));
+      name = file->header_text(1);
       slw.set_name(name);
     }
-    else if (is_header(2, line)) {
+    else if (file->is_header(2)) {
       // Slot name, beginning of comments
-      name = trimmed(string(line + 3));
+      name = file->header_text(2);
       comments = "";
       collect_comments = true;
     }
-    else if (is_header(3, line)) {
+    else if (file->is_header(3)) {
       collect_comments = false;
     }
-    else if (strncmp("Original slot number: ", line, 22) == 0) {
+    else if (file->line().substr(0, 22) == "Original slot number: ") {
       Slot &slot = new_set_list.slots[slot_number];
       SlotWrapper sw(slot);
-      int orig_slot_number = atoi(line + 22);
+      int orig_slot_number = atoi(file->line().c_str() + 22);
 
       // copy original slot into this slot position
       memcpy((void *)&slot, (void *)&set_list.slots[orig_slot_number], sizeof(Slot));
@@ -240,7 +242,7 @@ void Editor::load_set_list_from_file() {
         comments += line;
     }
   }
-  fclose(fp);
+  file->close();
 
   memcpy(&set_list, &new_set_list, sizeof(SetList));
 }
@@ -272,11 +274,4 @@ void Editor::write_slot() {
   delete kstr;
   if (kronos->error_reply_seen()) // error already printed
     return;
-}
-
-bool Editor::is_header(int n, char *line) {
-  for (int i = 0; i < n; ++i)
-    if (line[i] != header_char)
-      return false;
-  return line[n] == ' ';
 }

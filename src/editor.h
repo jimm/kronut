@@ -4,6 +4,7 @@
 #include <string>
 #include "kronos.h"
 #include "kstring.h"
+#include "edit_file.h"
 
 #define EDITOR_OK 0
 #define EDITOR_ERROR -1
@@ -41,7 +42,7 @@ protected:
   string name;
   string comments;
   SetList set_list;
-  char header_char;
+  EditFile *file;
 
   void read_maybe_dump(bool dump);
 
@@ -54,8 +55,6 @@ protected:
   virtual int edit_file();
 
   string trimmed(string s);
-
-  bool is_header(int n, char *line);
 };
 
 #endif /* EDITOR_H */
