@@ -1,11 +1,56 @@
 #include "edit_file.h"
 
-#define EDITOR_TMPFILE "/tmp/kronut_editor"
-
 EditFile::EditFile(const char * const path, char header_char)
   : _path(path), _header_char(header_char)
 {
 }
+
+// ================ writing ================
+
+void EditFile::header(int level, char *text) {
+  for (int i = 0; i < level; ++i)
+    fputc(_header_char, _fp);
+  fputc(' ', _fp);
+  fprintf(_fp, "%s\n\n", text);
+}
+
+void EditFile::header(int level, string str) {
+  for (int i = 0; i < level; ++i)
+    fputc(_header_char, _fp);
+  fputc(' ', _fp);
+  fprintf(_fp, "%s\n\n", str.c_str());
+}
+
+
+void EditFile::text(char *chars) {
+  KString kstr(MD_INIT_INTERNAL, chars, strlen(chars));
+  text(kstr);
+}
+
+void EditFile::text(string str) {
+  KString kstr(MD_INIT_INTERNAL, (char *)str.c_str(), str.size());
+  text(kstr);
+}
+
+void EditFile::text(KString &kstr) {
+  char *chars = kstr.str();
+
+  puts(chars);
+  fputc('\n', _fp);
+}
+
+void EditFile::puts(char *text) {
+  fprintf(_fp, "%s", text);
+  if (text[strlen(text) - 1] != '\n')
+    fputc('\n', _fp);
+}
+
+void EditFile::puts(string str) {
+  char *chars = (char *)str.c_str();
+  puts(chars);
+}
+
+// ================ reading ================
 
 char *EditFile::gets() {
   char buf[BUFSIZ];
@@ -23,20 +68,6 @@ bool EditFile::is_header(int n) {
   return _line[n] == ' ';
 }
 
-void EditFile::header(int level, char *text) {
-  for (int i = 0; i < level; ++i)
-    fputc(_header_char, _fp);
-  fputc(' ', _fp);
-  fputs(text, _fp);
-}
-
-void EditFile::header(int level, string str) {
-  for (int i = 0; i < level; ++i)
-    fputc(_header_char, _fp);
-  fputc(' ', _fp);
-  fputs(str.c_str(), _fp);
-}
-
 string EditFile::header_text(int n) {
   return trimmed(_line.substr(n + 1));
 }
@@ -52,10 +83,14 @@ string EditFile::trimmed(string s) {
   return string(p);
 }
 
+// ================ OrgModeEditFile ================
+
 OrgModeEditFile::OrgModeEditFile()
   : EditFile("/tmp/kronut_editor.org", '*')
 {
 }
+
+// ================ MarkdownEditFile ================
 
 MarkdownEditFile::MarkdownEditFile()
   : EditFile("/tmp/kronut_editor.md", '#')

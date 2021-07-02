@@ -134,7 +134,8 @@ void Editor::save_set_list_to_file() {
     SlotWrapper sw(slot);
 
     file->header(2, sw.name());
-    file->text(sw.comments());
+    if (sw.comments().size() > 0)
+      file->text(trimmed(sw.comments()));
 
     file->header(3, "Data");
     sprintf(buf, "%s %s %03d",
@@ -143,12 +144,13 @@ void Editor::save_set_list_to_file() {
             sw.performance_index());
     file->puts(buf);
 
-    sprintf(buf, "Transpose: %d\n", sw.xpose());
+    sprintf(buf, "Transpose: %d", sw.xpose());
     file->puts(buf);
 
     sprintf(buf, "Original slot number: %d", i);
     file->puts(buf);
-    file->line();
+
+    file->puts("");
   }
 
   file->close();

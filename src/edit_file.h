@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string>
+#include "kstring.h"
 
 using namespace std;
 
@@ -22,11 +23,12 @@ public:
   void header(int level, char *text);
   void header(int level, string str);
 
-  void text(char *text) { puts(text); fputc('\n', _fp); }
-  void text(string str) { puts(str.c_str()); fputc('\n', _fp); }
+  void text(char *text);
+  void text(string str);
+  void text(KString &kstr);
 
-  void puts(char *text) { fputs(text, _fp); }
-  void puts(string str) { fputs(str.c_str(), _fp); }
+  void puts(char *text);
+  void puts(string str);
 
   // reading
 

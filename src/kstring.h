@@ -5,7 +5,8 @@
 
 class KString : public MIDIData {
 public:
-  KString(int init_type, byte *bytes, size_t len, byte pad);
+  KString(int init_type, byte *bytes, size_t len, byte pad = 0);
+  KString(int init_type, char *chars, size_t len, byte pad = 0);
   ~KString();
 
   char * str() { return c_str; }

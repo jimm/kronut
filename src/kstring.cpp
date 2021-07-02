@@ -14,6 +14,12 @@ KString::KString(int init_type, byte *bytes, size_t len, byte p)
   internal_bytes_to_str();
 }
 
+KString::KString(int init_type, char *chars, size_t len, byte p)
+  : MIDIData(init_type, (byte *)chars, len), c_str(0), pad(p)
+{
+  internal_bytes_to_str();
+}
+
 KString::~KString()
 {
   if (c_str)
