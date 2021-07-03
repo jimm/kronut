@@ -10,6 +10,8 @@
 #define EDITOR_ERROR -1
 #define EDITOR_TOO_LONG -2
 
+class SlotWrapper;
+
 class Editor {
 public:
   Editor(Kronos *k);
@@ -50,7 +52,9 @@ protected:
   void load_slot_from_file();
 
   void save_set_list_to_file();
+  void save_set_list_settings_to_file(SlotWrapper &sw, int orig_slot);
   void load_set_list_from_file();
+  int load_set_list_slot_settings_from_file(SlotWrapper &sw);
 
   virtual int edit_file();
 

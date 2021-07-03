@@ -13,13 +13,13 @@ typedef unsigned char byte;
 // Font takes bits
 
 enum SlotPerformanceType {
-  pt_program,
+  pt_program = 0,
   pt_combination,
   pt_song
 };
 
 enum SlotColor {
-  color_default,
+  color_default = 0,
   color_charcoal,
   color_brick,
   color_burgundy,
@@ -38,7 +38,7 @@ enum SlotColor {
 };
 
 enum SlotFont {
-  font_s,
+  font_s = 0,
   font_xs,
   font_m,
   font_l,
@@ -64,12 +64,15 @@ public:
   const char * const performance_type_name();
 
   byte performance_bank();
-  void set_performance_bank(byte val);
   string performance_bank_name();
-  string performance_name();
+  void set_performance_bank(byte val);
 
   byte performance_index();
   void set_performance_index(byte val);
+
+  string performance_name();
+  // Parses str and sets performance type, bank, and index.
+  void set_performance_name(string str);
 
   byte hold_time();
   void set_hold_time(byte val);
@@ -81,13 +84,15 @@ public:
   void set_keyboard_track(byte val);
 
   SlotColor color();
-  void set_color(SlotColor c);
   const char * const color_name();
+  void set_color(SlotColor c);
+  void set_color_name(string str);
 
   SlotFont font();
   void set_font(SlotFont f);
   const char * const font_name();
   const char * const font_short_name();
+  void set_font_name(string str);
 
   int xpose();
   void set_xpose(int xpose);

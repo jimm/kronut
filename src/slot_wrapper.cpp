@@ -55,12 +55,12 @@ const char * const SlotWrapper::performance_type_name() {
   return SLOT_PERF_TYPE_NAMES[(int)performance_type()];
 }
 
-byte SlotWrapper::performance_bank() {
-  return slot.performance_bank & 0x1f;
-}
-
 void SlotWrapper::set_performance_bank(byte val) {
   slot.performance_bank = (slot.performance_bank & 0xe0) + (val & 0x1f);
+}
+
+byte SlotWrapper::performance_bank() {
+  return slot.performance_bank & 0x1f;
 }
 
 string SlotWrapper::performance_bank_name() {
@@ -86,14 +86,7 @@ string SlotWrapper::performance_bank_name() {
   if (bank == 0x06)
     return "GM";
 
-  ostream << "INT-" << (char)('A' + bank);
-  return ostream.str();
-}
-
-string SlotWrapper::performance_name() {
-  ostrstream ostream;
-  ostream << performance_type_name() << ' ' << performance_bank_name() << ' '
-          << std::setfill('0') << std::setw(3) << performance_index();
+  ostream << "INT-" << (char)('A' + (int)bank) << std::ends;
   return ostream.str();
 }
 
@@ -103,6 +96,71 @@ byte SlotWrapper::performance_index() {
 
 void SlotWrapper::set_performance_index(byte val) {
   slot.performance_index = val;
+}
+
+string SlotWrapper::performance_name() {
+  ostrstream ostream;
+  int index_offset = 0;
+
+  // The g* banks and the GM bank start with index 1, not 0, in the UI.
+  if (performance_bank() >= 0x06 && performance_bank() <= 0x10)
+    index_offset = 1;
+
+  ostream << performance_type_name() << ' ' << performance_bank_name() << ' '
+          << std::setfill('0') << std::setw(3) << (performance_index() + index_offset)
+          << std::ends;
+  return ostream.str();
+}
+
+// Parses str and sets performance type, bank, and index.
+void SlotWrapper::set_performance_name(string str) {
+  for (int i = 0; i < 3; ++i) {
+    if (strncasecmp(str.c_str(), SLOT_PERF_TYPE_NAMES[i], 1) == 0) {
+      set_performance_type((SlotPerformanceType)i);
+      break;
+    }
+  }
+
+  size_t index = str.find(' ');
+  if (index == string::npos)
+    return;
+
+  str = str.substr(index + 1);
+  if (strncasecmp(str.c_str(), "USER-", 5) == 0) {
+    char ch = str.c_str()[5];
+    if (ch >= 'a' && ch <= 'g')
+      ch = ch - 'a' + 'A';
+    byte val = 0x11 + ch - 'A';
+    if (str.c_str()[6] == ch)
+      val += 7;
+    set_performance_bank(val);
+  }
+  else if (strncasecmp(str.c_str(), "g(d)", 4) == 0) {
+    set_performance_bank(0x10);
+  }
+  else if (strncasecmp(str.c_str(), "g(", 2) == 0) {
+    set_performance_bank(0x07 + (str.c_str()[2] - '1'));
+  }
+  else if (strncasecmp(str.c_str(), "GM", 2) == 0) {
+    set_performance_bank(0x06);
+  }
+  else if (strncasecmp(str.c_str(), "INT-", 4) == 0) {
+    char ch = str.c_str()[5];
+    if (ch >= 'a' && ch <= 'f')
+      ch = ch - 'a' + 'A';
+    byte val = ch - 'A';
+    set_performance_bank(val);
+  }
+
+  index = str.find(' ', index + 1);
+  if (index == string::npos)
+    return;
+
+  int index_offset = 0;
+  if (performance_bank() >= 0x06 && performance_bank() <= 0x10)
+    index_offset = 1;
+  long val = strtol(str.substr(index + 1).c_str(), 0, 10);
+  set_performance_index((int)val + index_offset);
 }
 
 byte SlotWrapper::hold_time() {
@@ -134,12 +192,24 @@ SlotColor SlotWrapper::color() {
   return (SlotColor)(val);
 }
 
+void SlotWrapper::set_color(SlotColor c) {
+  slot.performance_type = (slot.performance_type & 0xc3) + ((c << 2) & 0x3c);
+}
+
 const char * const SlotWrapper::color_name() {
   return SLOT_COLOR_NAMES[color()];
 }
 
-void SlotWrapper::set_color(SlotColor c) {
-  slot.performance_type = (slot.performance_type & 0xc3) + ((c << 2) & 0x3c);
+void SlotWrapper::set_color_name(string str) {
+  for (int i = 0; i < 16; ++i) {
+    int len = str.size();
+    if (len > strlen(SLOT_COLOR_NAMES[i]))
+      len = strlen(SLOT_COLOR_NAMES[i]);
+    if (strncasecmp(str.c_str(), SLOT_COLOR_NAMES[i], len) == 0) {
+      set_color((SlotColor)i);
+      return;
+    }
+  }
 }
 
 SlotFont SlotWrapper::font() {
@@ -162,8 +232,24 @@ void SlotWrapper::set_font(SlotFont f) {
     slot.performance_type &= 0x3f;
   }
   else {
-    slot.keyboard_track &= 0x7f;
-    slot.performance_type = (slot.performance_type & 0x3f) + ((f << 6) & 0xc0);
+    slot.keyboard_track &= 0xef;
+    slot.performance_type = (slot.performance_type & 0x3f) + (((int)f << 6) & 0xc0);
+  }
+}
+
+void SlotWrapper::set_font_name(string str) {
+  for (int i = 0; i < 5; ++i) {
+    int len = str.size();
+    if (len > strlen(SLOT_FONT_NAMES[i]))
+      len = strlen(SLOT_FONT_NAMES[i]);
+    if (strncasecmp(str.c_str(), SLOT_FONT_NAMES[i], len) == 0) {
+      set_font((SlotFont)i);
+      return;
+    }
+    if (strncasecmp(str.c_str(), SLOT_FONT_SHORT_NAMES[i], strlen(SLOT_FONT_SHORT_NAMES[i])) == 0) {
+      set_font((SlotFont)i);
+      return;
+    }
   }
 }
 
