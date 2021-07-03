@@ -9,7 +9,7 @@ using namespace std;
 
 class EditFile {
 public:
-  EditFile(const char * const path, char header_char);
+  EditFile(const char * const path, char header_char, char table_sep_sep_char);
 
   string path() { return _path; }
 
@@ -30,6 +30,12 @@ public:
   void puts(char *text);
   void puts(string str);
 
+  void table_separator();
+  void table_headers(const char * const h1, const char * const h2);
+  void table_row(const char * const h1, const char * const h2);
+  void table_row(const char * const h1, const int value);
+  void table_end();
+
   // reading
 
   char *gets();
@@ -43,6 +49,7 @@ protected:
   string _path;
   string _line;
   char _header_char;
+  char _table_sep_sep_char;
 
   string trimmed(string str);
 };

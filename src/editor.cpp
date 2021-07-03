@@ -137,18 +137,16 @@ void Editor::save_set_list_to_file() {
     if (sw.comments().size() > 0)
       file->text(trimmed(sw.comments()));
 
-    file->header(3, "Data");
-    sprintf(buf, "%s %s %03d",
-            sw.performance_type_name(),
-            sw.performance_bank_name().c_str(),
-            sw.performance_index());
-    file->puts(buf);
-
-    sprintf(buf, "Transpose: %d", sw.xpose());
-    file->puts(buf);
-
-    sprintf(buf, "Original slot number: %d", i);
-    file->puts(buf);
+    file->table_headers("Setting", "Value");
+    file->table_row("Performance", sw.performance_name().c_str());
+    file->table_row("Color", sw.color_name());
+    file->table_row("Font", sw.font_name());
+    file->table_row("Transpose", sw.xpose());
+    file->table_row("Volume", sw.volume());
+    file->table_row("Hold Time", sw.hold_time());
+    file->table_row("Kbd Track", sw.keyboard_track());
+    file->table_row("Orig. Slot", i);
+    file->table_end();
 
     file->puts("");
   }

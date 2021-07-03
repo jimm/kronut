@@ -66,6 +66,7 @@ public:
   byte performance_bank();
   void set_performance_bank(byte val);
   string performance_bank_name();
+  string performance_name();
 
   byte performance_index();
   void set_performance_index(byte val);

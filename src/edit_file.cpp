@@ -1,7 +1,10 @@
 #include "edit_file.h"
 
-EditFile::EditFile(const char * const path, char header_char)
-  : _path(path), _header_char(header_char)
+#define COL1_DATA_WIDTH 11
+#define COL2_DATA_WIDTH 11
+
+EditFile::EditFile(const char * const path, char header_char, char table_sep_sep_char)
+  : _path(path), _header_char(header_char), _table_sep_sep_char(table_sep_sep_char)
 {
 }
 
@@ -50,6 +53,45 @@ void EditFile::puts(string str) {
   puts(chars);
 }
 
+// ================ writing tables ================
+
+void EditFile::table_separator() {
+  fputc('|', _fp);
+  for (int i = 0; i < COL1_DATA_WIDTH + 2; ++i)
+    fputc('-', _fp);
+  fputc(_table_sep_sep_char, _fp);
+  for (int i = 0; i < COL2_DATA_WIDTH + 2; ++i)
+    fputc('-', _fp);
+  fprintf(_fp, "|\n");
+}
+
+void EditFile::table_headers(const char * const h1, const char * const h2) {
+  table_separator();
+  table_row(h1, h2);
+  table_separator();
+}
+
+void EditFile::table_row(const char * const col1, const char * const col2) {
+  fprintf(_fp, "| %s", col1);
+  for (int i = strlen(col1); i < COL1_DATA_WIDTH + 2; ++i)
+    fputc(' ', _fp);
+  fprintf(_fp, "| %s", col2);
+  for (int i = strlen(col2); i < COL2_DATA_WIDTH + 2; ++i)
+    fputc(' ', _fp);
+  fprintf(_fp, "|\n");
+}
+
+void EditFile::table_row(const char * const col1, int value) {
+  char buf[16];
+
+  sprintf(buf, "%d", value);
+  table_row(col1, buf);
+}
+
+void EditFile::table_end() {
+  table_separator();
+}
+
 // ================ reading ================
 
 char *EditFile::gets() {
@@ -83,16 +125,18 @@ string EditFile::trimmed(string s) {
   return string(p);
 }
 
+// ================ reading tables ================
+
 // ================ OrgModeEditFile ================
 
 OrgModeEditFile::OrgModeEditFile()
-  : EditFile("/tmp/kronut_editor.org", '*')
+  : EditFile("/tmp/kronut_editor.org", '*', '+')
 {
 }
 
 // ================ MarkdownEditFile ================
 
 MarkdownEditFile::MarkdownEditFile()
-  : EditFile("/tmp/kronut_editor.md", '#')
+  : EditFile("/tmp/kronut_editor.md", '#', '|')
 {
 }

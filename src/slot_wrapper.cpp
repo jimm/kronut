@@ -1,4 +1,5 @@
 #include <strstream>
+#include <iomanip>
 #include "slot_wrapper.h"
 
 const char * const SLOT_PERF_TYPE_NAMES[3] = {
@@ -86,6 +87,13 @@ string SlotWrapper::performance_bank_name() {
     return "GM";
 
   ostream << "INT-" << (char)('A' + bank);
+  return ostream.str();
+}
+
+string SlotWrapper::performance_name() {
+  ostrstream ostream;
+  ostream << performance_type_name() << ' ' << performance_bank_name() << ' '
+          << std::setfill('0') << std::setw(3) << performance_index();
   return ostream.str();
 }
 
