@@ -136,22 +136,25 @@ void Editor::save_set_list_to_file() {
     file->header(2, sw.name());
     if (sw.comments().size() > 0)
       file->text(trimmed(sw.comments()));
-
-    file->table_headers("Setting", "Value");
-    file->table_row("Performance", sw.performance_name().c_str());
-    file->table_row("Color", sw.color_name());
-    file->table_row("Font", sw.font_name());
-    file->table_row("Transpose", sw.xpose());
-    file->table_row("Volume", sw.volume());
-    file->table_row("Hold Time", sw.hold_time());
-    file->table_row("Kbd Track", sw.keyboard_track());
-    file->table_row("Orig. Slot", i);
-    file->table_end();
-
+    save_set_list_settings_to_file(sw, i);
     file->puts("");
   }
 
   file->close();
+}
+
+void Editor::save_set_list_settings_to_file(SlotWrapper &sw, int orig_slot) {
+  file->table_headers("Setting", "Value");
+  file->table_row("Performance", sw.performance_name().c_str());
+  file->table_row("Color", sw.color_name());
+  file->table_row("Font", sw.font_name());
+  file->table_row("Transpose", sw.xpose());
+  file->table_row("Volume", sw.volume());
+  file->table_row("Hold Time", sw.hold_time());
+  file->table_row("Kbd Track", sw.keyboard_track());
+  file->table_separator();
+  file->table_row("Orig. Slot", orig_slot);
+  file->table_end();
 }
 
 int Editor::edit_file() {
@@ -222,18 +225,15 @@ void Editor::load_set_list_from_file() {
     else if (file->is_header(3)) {
       collect_comments = false;
     }
-    else if (file->line().substr(0, 22) == "Original slot number: ") {
+    else if (file->is_table_start()) {
       Slot &slot = new_set_list.slots[slot_number];
       SlotWrapper sw(slot);
-      int orig_slot_number = atoi(file->line().c_str() + 22);
+      int orig_slot_number = load_set_list_slot_settings_from_file(sw);
 
       // copy original slot into this slot position
       memcpy((void *)&slot, (void *)&set_list.slots[orig_slot_number], sizeof(Slot));
-
       sw.set_name(name);
       sw.set_comments(trimmed(comments));
-
-      // FIXME all the other values
 
       ++slot_number;
     }
@@ -245,6 +245,39 @@ void Editor::load_set_list_from_file() {
   file->close();
 
   memcpy(&set_list, &new_set_list, sizeof(SetList));
+}
+
+// Loads set list slot settings and returns original set list slot index.
+int Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
+  int orig_slot_number = 0;
+
+  file->skip_table_headers();
+  while (!file->is_table_separator()) {
+    string setting_name = file->table_col1();
+    if (setting_name == "Performance")
+      sw.set_performance_name(file->table_col2());
+    else if (setting_name == "Color")
+      sw.set_color_name(file->table_col2());
+    else if (setting_name == "Font")
+      sw.set_font_name(file->table_col2());
+    else if (setting_name == "Transpose")
+      sw.set_xpose(atoi(file->table_col2().c_str()));
+    else if (setting_name == "Volume")
+      sw.set_volume(atoi(file->table_col2().c_str()));
+    else if (setting_name == "Hold Time")
+      sw.set_hold_time(atoi(file->table_col2().c_str()));
+    else if (setting_name == "Kbd Track")
+      sw.set_keyboard_track(atoi(file->table_col2().c_str()));
+    file->gets();
+  }
+
+  file->gets();
+  if (file->table_col1() == "Orig. Slot")
+    orig_slot_number = atoi(file->table_col2().c_str());
+  else
+    fprintf(stderr, "error: \"Orig. Slot\" missing from data table\n");
+
+  return orig_slot_number;
 }
 
 string Editor::trimmed(string s) {

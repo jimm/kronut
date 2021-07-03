@@ -44,6 +44,12 @@ public:
   bool is_header(int level);
   string header_text(int level);
 
+  bool is_table_start();
+  bool is_table_separator();
+  void skip_table_headers();
+  string table_col1();
+  string table_col2();
+
 protected:
   FILE *_fp;
   string _path;

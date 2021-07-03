@@ -106,14 +106,30 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
 
     sw.set_font(font_xl);
     REQUIRE(sw.font() == font_xl);
+
+    sw.set_font(font_s);
+    REQUIRE(sw.font() == font_s);
   }
 
-  SECTION("color names") {
-    sw.set_color(color_default);
-    REQUIRE(strcmp(sw.color_name(), "Default") == 0);
+  SECTION("font name getters") {
+    REQUIRE(strcmp(sw.font_name(), "Small") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "S") == 0);
 
-    sw.set_color(color_olive);
-    REQUIRE(strcmp(sw.color_name(), "Olive") == 0);
+    sw.set_font(font_xs);
+    REQUIRE(strcmp(sw.font_name(), "Extra Small") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "XS") == 0);
+
+    sw.set_font(font_m);
+    REQUIRE(strcmp(sw.font_name(), "Medium") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "M") == 0);
+
+    sw.set_font(font_l);
+    REQUIRE(strcmp(sw.font_name(), "Large") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "L") == 0);
+
+    sw.set_font(font_xl);
+    REQUIRE(strcmp(sw.font_name(), "Extra Large") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "XL") == 0);
   }
 
   SECTION("font names") {
@@ -125,6 +141,48 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
 
     sw.set_font(font_xl);
     REQUIRE(strcmp(sw.font_name(), "Extra Large") == 0);
+  }
+
+  SECTION("font name setters") {
+    sw.set_font_name("Small");
+    REQUIRE(sw.font() == font_s);
+    sw.set_font_name("Extra Small");
+    REQUIRE(sw.font() == font_xs);
+    sw.set_font_name("Medium");
+    REQUIRE(sw.font() == font_m);
+    sw.set_font_name("Large");
+    REQUIRE(sw.font() == font_l);
+    sw.set_font_name("Extra Large");
+    REQUIRE(sw.font() == font_xl);
+
+    sw.set_font_name("S");
+    REQUIRE(sw.font() == font_s);
+    sw.set_font_name("XS");
+    REQUIRE(sw.font() == font_xs);
+    sw.set_font_name("M");
+    REQUIRE(sw.font() == font_m);
+    sw.set_font_name("L");
+    REQUIRE(sw.font() == font_l);
+    sw.set_font_name("XL");
+    REQUIRE(sw.font() == font_xl);
+  }
+
+  SECTION("color names") {
+    REQUIRE(strcmp(sw.color_name(), "Default") == 0);
+
+    sw.set_color(color_olive);
+    REQUIRE(strcmp(sw.color_name(), "Olive") == 0);
+  }
+
+  SECTION("color name setters") {
+    sw.set_color_name("olive");
+    REQUIRE(sw.color() == color_olive);
+
+    sw.set_color_name("na");
+    REQUIRE(sw.color() == color_navy);
+
+    sw.set_color_name("LAV");
+    REQUIRE(sw.color() == color_lavender);
   }
 
   SECTION("bank names") {
@@ -157,5 +215,21 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
 
     sw.set_performance_bank(0x1e);
     REQUIRE(sw.performance_bank_name() == "USER-GG");
+  }
+
+  SECTION("performance names") {
+    sw.set_performance_type(pt_combination);
+    sw.set_performance_bank(0x12);
+    sw.set_performance_index(3);
+    REQUIRE(sw.performance_name() == "Combination USER-B 003");
+
+    sw.set_performance_bank(0x19);
+    REQUIRE(sw.performance_name() == "Combination USER-BB 003");
+
+    sw.set_performance_bank(0x07);
+    REQUIRE(sw.performance_name() == "Combination g(1) 004"); // nums +1
+
+    sw.set_performance_bank(0x06);
+    REQUIRE(sw.performance_name() == "Combination GM 004"); // nums +1
   }
 }

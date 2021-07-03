@@ -1,7 +1,7 @@
 #include "edit_file.h"
 
 #define COL1_DATA_WIDTH 11
-#define COL2_DATA_WIDTH 11
+#define COL2_DATA_WIDTH 24
 
 EditFile::EditFile(const char * const path, char header_char, char table_sep_sep_char)
   : _path(path), _header_char(header_char), _table_sep_sep_char(table_sep_sep_char)
@@ -72,13 +72,7 @@ void EditFile::table_headers(const char * const h1, const char * const h2) {
 }
 
 void EditFile::table_row(const char * const col1, const char * const col2) {
-  fprintf(_fp, "| %s", col1);
-  for (int i = strlen(col1); i < COL1_DATA_WIDTH + 2; ++i)
-    fputc(' ', _fp);
-  fprintf(_fp, "| %s", col2);
-  for (int i = strlen(col2); i < COL2_DATA_WIDTH + 2; ++i)
-    fputc(' ', _fp);
-  fprintf(_fp, "|\n");
+  fprintf(_fp, "| %*s | %*s |\n", -COL1_DATA_WIDTH, col1, -COL2_DATA_WIDTH, col2);
 }
 
 void EditFile::table_row(const char * const col1, int value) {
@@ -126,6 +120,33 @@ string EditFile::trimmed(string s) {
 }
 
 // ================ reading tables ================
+
+bool EditFile::is_table_start() {
+  return is_table_separator();
+}
+
+bool EditFile::is_table_separator() {
+  return _line.substr(0, 3) == "|--";
+}
+
+// Assumes we're starting on the first line of the table.
+void EditFile::skip_table_headers() {
+  fprintf(stderr, "skip_table_headers\n"); // DEBUG
+  gets();
+  fprintf(stderr, "read line %s\n", _line.c_str()); // DEBUG
+  gets();
+  fprintf(stderr, "read line %s\n", _line.c_str()); // DEBUG
+  gets();
+  fprintf(stderr, "read line %s\n", _line.c_str()); // DEBUG
+}
+
+string EditFile::table_col1() {
+  return trimmed(_line.substr(2, COL1_DATA_WIDTH));
+}
+
+string EditFile::table_col2() {
+  return trimmed(_line.substr(2, COL1_DATA_WIDTH + 3));
+}
 
 // ================ OrgModeEditFile ================
 
