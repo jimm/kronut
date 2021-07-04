@@ -232,4 +232,19 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
     sw.set_performance_bank(0x06);
     REQUIRE(sw.performance_name() == "Combination GM 004"); // nums +1
   }
+
+  SECTION("performance name saving") {
+    // test case-insensitivity and prefix for type
+    sw.set_performance_name("prog int-e 123");
+    REQUIRE(sw.performance_type() == pt_program);
+    REQUIRE(sw.performance_bank() == 0x04);
+    REQUIRE(sw.performance_index() == 123);
+    REQUIRE(sw.performance_name() == "Program INT-E 123");
+
+    sw.set_performance_name("Combination GM 1");
+    REQUIRE(sw.performance_type() == pt_combination);
+    REQUIRE(sw.performance_bank() == 0x06);
+    REQUIRE(sw.performance_index() == 0); // GM and a few others offset by 1
+    REQUIRE(sw.performance_name() == "Combination GM 001");
+  }
 }

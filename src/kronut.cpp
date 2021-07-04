@@ -1,5 +1,6 @@
 #include <CoreMIDI/MIDIServices.h>
 #include <getopt.h>
+#include <ctype.h>
 #include <iostream>
 #include <libgen.h>
 #include <stdio.h>
@@ -20,6 +21,7 @@ struct opts {
   int channel;
   int input_num;
   int output_num;
+  int format;
 } opts;
 
 MIDIClientRef my_client_ref;
@@ -142,15 +144,9 @@ void cleanup_midi() {
     printf("MIDIPortDispose error: %d\n", err);
 }
 
-void cleanup() {
-  cleanup_midi();
-}
-
-Kronos * init_midi(struct opts *opts) {
+void init_midi(Kronos &kronos, struct opts &opts) {
   OSStatus err;
   CFStringRef cf_str;
-
-  Kronos *k = new Kronos(opts->channel);
 
   cf_str = cstr_to_cfstring("Kronos Set Editor");
   err = MIDIClientCreate(cf_str, 0, 0, &my_client_ref);
@@ -159,16 +155,16 @@ Kronos * init_midi(struct opts *opts) {
   CFRelease(cf_str);
 
   // Kronos endpoints
-  kronos_in_end_ref = MIDIGetDestination(opts->input_num);
-  kronos_out_end_ref = MIDIGetSource(opts->output_num);
+  kronos_in_end_ref = MIDIGetDestination(opts.input_num);
+  kronos_out_end_ref = MIDIGetSource(opts.output_num);
   if (kronos_in_end_ref == 0)
-    printf("error getting input destination %d\n", opts->input_num);
+    printf("error getting input destination %d\n", opts.input_num);
   if (kronos_out_end_ref == 0)
-    printf("error getting output destination %d\n", opts->output_num);
+    printf("error getting output destination %d\n", opts.output_num);
 
   // My input port
   cf_str = cstr_to_cfstring("Kronos Set Editor Input");
-  err = MIDIInputPortCreate(my_client_ref, cf_str, midi_read_proc, k, &my_in_port);
+  err = MIDIInputPortCreate(my_client_ref, cf_str, midi_read_proc, &kronos, &my_in_port);
   if (err != 0)
     printf("MIDIInputPortCreate error: %d\n", err);
   CFRelease(cf_str);
@@ -179,140 +175,97 @@ Kronos * init_midi(struct opts *opts) {
   if (err != 0)
     printf("MIDIPortConnectSource error: %d\n", err);
 
-  k->set_input(my_in_port);
-  k->set_output(kronos_in_end_ref);
+  kronos.set_input(my_in_port);
+  kronos.set_output(kronos_in_end_ref);
 
-  atexit(cleanup);
-  return k;
+  atexit(cleanup_midi);
 }
 
-Kronos * initialize(struct opts *opts) {
-  Kronos *k;
-
-  k = init_midi(opts);
-  return k;
+void help() {
+  puts("  e: edit set list; reads from Kronos if not already read");
+  puts("  r: read current set list from Kronos");
+  puts("  w: write set list to Kronos (does not save it)");
+  puts("  l: load set list file");
+  puts("  s: save set list file");
+  puts("  h: this help (also '?')");
+  puts("  q: quit");
 }
 
-void run(Kronos *k) {
-  Editor editor(k);
-  char buf[32];
+char * trim(char *p) {
+  char *end;
 
-  puts("Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.");
-  puts("Kronut can't save the set list itself. Remember to do that.");
-  while (true) {
-    printf("kronut> ");
-    fflush(stdout);
-    if (fgets(buf, 32, stdin) == 0) {
-      printf("\n");
-      return;
-    }
+  while (isspace(*p)) ++p;
+  if (*p == '\0') return p;
 
-    switch (buf[0]) {
-    case 'e': case 'r':
-      if (editor.edit_current_slot(buf[0] == 'e') == EDITOR_TOO_LONG) {
-        puts("error: slot strings were NOT sent back to the Kronos");
-        if (editor.name_too_long())
-          printf("  name is too long (%ld chars, %d max)\n",
-                 strlen(editor.current_name().c_str()), SLOT_NAME_LEN);
-        if (editor.comments_too_long()) {
-          printf("  comments are too long (%ld chars, %d max)\n",
-                 strlen(editor.current_comments().c_str()), SLOT_COMMENTS_LEN);
-        }
-        puts("Type 'r' to re-edit what you saved.");
-      }
-      break;
-    case 'd':
-      editor.dump_current_slot();
-      break;
-    case 'p':
-      editor.print_current_slot();
-      break;
-    case 's':
-      editor.print_set_list_slot_names();
-      break;
-    case 'v':
-      editor.print_set_list_slot_values();
-      break;
-    case 'S':
-      editor.edit_current_set_list(true);
-      break;
-    case 'h': case '?':
-      puts("  e: edit current slot");
-      puts("  r: re-edit (does not get data from Kronos)");
-      puts("  p: print current slot");
-      puts("  d: dump current slot");
-      puts("  s: print the names of each slot in the current set list");
-      puts("  v: print the values (name plus non-comment data) of each slot in the current set list");
-      puts("  S: edit current set list");
-      puts("  h: this help (also '?')");
-      puts("  q: quit");
-      break;
-    case 'q':
-      return;
-    default:
-      break;
-    }
-  }
+  end = p + strlen(p) - 2;
+  while (end > p && isspace(*end)) --end;
+  *end = '\0';
+
+  return p;
 }
 
 void usage(const char *prog_name) {
   cerr << "usage: " << basename((char *)prog_name)
-       << "[-l] [-i N] [-o N] [-n] [-h] file" << endl
+       << "[-l] [-i N] [-o N] [-c N] [-n] [-h] COMMAND [file]" << endl
        << endl
-       << "    -l or --list-ports" << endl
-       << "        List all attached MIDI ports" << endl
+       << "    -c, --channel N   Kronos general MIDI channel (1-16, default 1)" << endl
+       << "    -f, --format FMT  Format: \"o\" (Org Mode, default) or \"m\" (Markdown)" << endl
+       << "    -h, --help        This help" << endl
+       << "    -i, --input N     Input number" << endl
+       << "    -l, --list-ports  List all attached MIDI ports" << endl
+       << "    -n, --no-midi     No MIDI (ignores bad/unknown MIDI ports)" << endl
+       << "    -o, --output N    Output number" << endl
        << endl
-       << "    -i or --input N" << endl
-       << "        Input number" << endl
+       << "Commands:" << endl
        << endl
-       << "    -o or --output N" << endl
-       << "        Output number" << endl
+       << "    load [FILE]  Reads a file or stdin into the current set list." << endl
+       << "                 Remember: kronut does not save the set list; you" << endl
+       << "                 must do that yourself on the Kronos." << endl
        << endl
-       << "    -c or --channel N" << endl
-       << "        Kronos general MIDI channel (1-16, default 1)" << endl
-       << endl
-       << "    -n or --no-midi" << endl
-       << "        No MIDI (ignores bad/unknown MIDI ports)" << endl
-       << endl
-       << "    -h or --help" << endl
-       << "        This help" << endl;
+       << "    save [FILE]  Saves the current set list into a file or stdout." << endl;
 }
 
-void parse_command_line(int argc, char * const *argv, struct opts *opts) {
+void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   int ch, testing = false;
   char *prog_name = argv[0];
   static struct option longopts[] = {
-    {"list", no_argument, 0, 'l'},
     {"channel", required_argument, 0, 'c'},
-    {"input", required_argument, 0, 'i'},
-    {"output", required_argument, 0, 'o'},
-    {"no-midi", no_argument, 0, 'n'},
+    {"format", required_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
+    {"input", required_argument, 0, 'i'},
+    {"list", no_argument, 0, 'l'},
+    {"no-midi", no_argument, 0, 'n'},
+    {"output", required_argument, 0, 'o'},
     {0, 0, 0, 0}
   };
 
-  opts->list_devices = opts->testing = false;
-  opts->input_num = opts->output_num = -1;
+  opts.list_devices = opts.testing = false;
+  opts.input_num = opts.output_num = -1;
+  opts.format = EDITOR_FORMAT_ORG_MODE;
   while ((ch = getopt_long(argc, argv, "lc:i:o:nh", longopts, 0)) != -1) {
     switch (ch) {
-    case 'l':
-      opts->list_devices = true;
-      break;
     case 'c':
-      opts->channel = atoi(optarg) - 1; // 0-15
-      if (opts->channel < 0 || opts->channel > 15) {
+      opts.channel = atoi(optarg) - 1; // 0-15
+      if (opts.channel < 0 || opts.channel > 15) {
         fprintf(stderr, "error: channel must be 1-16\n");
         usage(prog_name);
         exit(1);
       }
       break;
+    case 'f':
+      opts.format = optarg[0] == 'm' ? EDITOR_FORMAT_MARKDOWN : EDITOR_FORMAT_ORG_MODE;
+      break;
     case 'i':
-      opts->input_num = atoi(optarg);
-    case 'o':
-      opts->output_num = atoi(optarg);
+      opts.input_num = atoi(optarg);
+      break;
+    case 'l':
+      opts.list_devices = true;
       break;
     case 'n':
-      opts->testing = true;
+      opts.testing = true;
+      break;
+    case 'o':
+      opts.output_num = atoi(optarg);
       break;
     case 'h': default:
       usage(prog_name);
@@ -324,8 +277,9 @@ void parse_command_line(int argc, char * const *argv, struct opts *opts) {
 int main(int argc, char * const *argv) {
   struct opts opts;
   const char *prog_name = argv[0];
+  char *path;
 
-  parse_command_line(argc, argv, &opts);
+  parse_command_line(argc, argv, opts);
   argc -= optind;
   argv += optind;
 
@@ -349,10 +303,31 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
-  Kronos *k = initialize(&opts);
-  run(k);
-  delete k;
+  if (argc == 0) {
+    usage(prog_name);
+    exit(1);
+  }
 
-  exit(0);
-  return 0;
+  int status = 0;
+  Kronos kronos(opts.channel);
+  init_midi(kronos, opts);
+  Editor editor(opts.format);
+
+  if (argv[0][0] == 'l') {
+    path = argc > 1 ? argv[1] : nullptr;
+    editor.load_set_list_from_file(path);
+    kronos.write_current_set_list(editor.set_list());
+  }
+  else if (argv[0][0] == 's') {
+    kronos.read_current_set_list(editor.set_list());
+    path = argc > 1 ? argv[1] : nullptr;
+    editor.save_set_list_to_file(path);
+  }
+  else {
+    usage(prog_name);
+    status = 1;
+  }
+
+  exit(status);
+  return status;
 }

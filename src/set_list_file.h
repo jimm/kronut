@@ -7,16 +7,12 @@
 
 using namespace std;
 
-class EditFile {
+class SetListFile {
 public:
-  EditFile(const char * const path, char header_char, char table_sep_sep_char);
+  SetListFile(char header_char, char table_sep_sep_char);
 
-  string path() { return _path; }
-
-  void open(const char *mode) { _fp = fopen(_path.c_str(), mode); }
-  void close() { fclose(_fp); }
-
-  void rm() { remove(_path.c_str()); }
+  void open(const char * const path, const char *mode);
+  void close();
 
   // writing
 
@@ -38,8 +34,10 @@ public:
 
   // reading
 
-  char *gets();
+  bool gets();                  // returns false on EOF
   string line() { return _line; }
+
+  void skip_blank_lines();
 
   bool is_header(int level);
   string header_text(int level);
@@ -52,7 +50,6 @@ public:
 
 protected:
   FILE *_fp;
-  string _path;
   string _line;
   char _header_char;
   char _table_sep_sep_char;
@@ -60,14 +57,14 @@ protected:
   string trimmed(string str);
 };
 
-class OrgModeEditFile : public EditFile {
+class OrgModeSetListFile : public SetListFile {
 public:
-  OrgModeEditFile();
+  OrgModeSetListFile();
 };
 
-class MarkdownEditFile : public EditFile {
+class MarkdownSetListFile : public SetListFile {
 public:
-  MarkdownEditFile();
+  MarkdownSetListFile();
 };
 
 #endif /* EDIT_FILE_H */

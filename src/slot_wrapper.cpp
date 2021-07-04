@@ -74,13 +74,13 @@ string SlotWrapper::performance_bank_name() {
       ostream << (char)('A' + bank - 0x18);
     }
     else
-      ostream << (char)('A' + bank - 0x11);
+      ostream << (char)('A' + bank - 0x11) << std::ends;
     return ostream.str();
   }
   if (bank == 0x10)
     return "g(d)";
   if (bank >= 0x07) {
-    ostream << "g(" << (int)(bank - 0x07 + 1) << ')';
+    ostream << "g(" << (int)(bank - 0x07 + 1) << ')' << std::ends;
     return ostream.str();
   }
   if (bank == 0x06)
@@ -145,22 +145,22 @@ void SlotWrapper::set_performance_name(string str) {
     set_performance_bank(0x06);
   }
   else if (strncasecmp(str.c_str(), "INT-", 4) == 0) {
-    char ch = str.c_str()[5];
+    char ch = str.c_str()[4];
     if (ch >= 'a' && ch <= 'f')
       ch = ch - 'a' + 'A';
     byte val = ch - 'A';
     set_performance_bank(val);
   }
 
-  index = str.find(' ', index + 1);
+  index = str.find(' ');
   if (index == string::npos)
     return;
 
-  int index_offset = 0;
+  int perf_index_offset = 0;
   if (performance_bank() >= 0x06 && performance_bank() <= 0x10)
-    index_offset = 1;
+    perf_index_offset = -1;
   long val = strtol(str.substr(index + 1).c_str(), 0, 10);
-  set_performance_index((int)val + index_offset);
+  set_performance_index((int)val + perf_index_offset);
 }
 
 byte SlotWrapper::hold_time() {
