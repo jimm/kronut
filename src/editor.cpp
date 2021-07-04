@@ -235,8 +235,6 @@ void Editor::load_set_list_from_file() {
       sw.set_name(name);
       sw.set_comments(trimmed(comments));
 
-      // FIXME all the other values
-
       ++slot_number;
     }
     else {

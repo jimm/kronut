@@ -112,24 +112,24 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
   }
 
   SECTION("font name getters") {
-    REQUIRE(sw.font_name() == "Small");
-    REQUIRE(sw.font_short_name() == "S");
+    REQUIRE(strcmp(sw.font_name(), "Small") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "S") == 0);
 
     sw.set_font(font_xs);
-    REQUIRE(sw.font_name() == "Extra Small");
-    REQUIRE(sw.font_short_name() == "XS");
+    REQUIRE(strcmp(sw.font_name(), "Extra Small") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "XS") == 0);
 
     sw.set_font(font_m);
-    REQUIRE(sw.font_name() == "Medium");
-    REQUIRE(sw.font_short_name() == "M");
+    REQUIRE(strcmp(sw.font_name(), "Medium") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "M") == 0);
 
     sw.set_font(font_l);
-    REQUIRE(sw.font_name() == "Large");
-    REQUIRE(sw.font_short_name() == "L");
+    REQUIRE(strcmp(sw.font_name(), "Large") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "L") == 0);
 
     sw.set_font(font_xl);
-    REQUIRE(sw.font_name() == "Extra Large");
-    REQUIRE(sw.font_short_name() == "XL");
+    REQUIRE(strcmp(sw.font_name(), "Extra Large") == 0);
+    REQUIRE(strcmp(sw.font_short_name(), "XL") == 0);
   }
 
   SECTION("font names") {
