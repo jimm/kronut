@@ -17,7 +17,6 @@ Editor::Editor(int format)
 
 // If path is nullptr, reads from stdin.
 void Editor::load_set_list_from_file(char *path) {
-  char line[BUFSIZ];
   SetListWrapper slw(_set_list);
   int slot_number = 0;
   bool collect_comments = false;
@@ -53,7 +52,7 @@ void Editor::load_set_list_from_file(char *path) {
     }
     else {
       if (collect_comments) {
-        comments += line;
+        comments += _file->line();
         comments += '\n';
       }
     }
