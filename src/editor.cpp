@@ -61,6 +61,8 @@ void Editor::load_set_list_from_file(char *path) {
 }
 
 void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
+  memset(sw.set_list.reserved, 0, 3);
+
   _file->skip_table_headers();
   while (!_file->is_table_separator()) {
     string setting_name = _file->table_col1();
@@ -83,15 +85,6 @@ void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
       _set_list.control_surface_mode = atoi(value.c_str());
     else if (setting_name == "Surface Asgn")
       _set_list.control_surface_assign_from = atoi(value.c_str());
-    // else if (setting_name == "Reserved") {
-    //   char *p = (char *)(const char *)value.c_str();
-    //   for (int i = 0; i < 4; ++i) {
-    //     char *endptr;
-    //     long val = strtol(p, &endptr, 10);
-    //     _set_list.reserved[i] = (byte)val;
-    //     p = endptr + 1;
-    //   }
-    // }
     _file->gets();
   }
 
@@ -161,9 +154,6 @@ void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
   _file->table_row("Band Levels", buf);
   _file->table_row("Surface Mode", _set_list.control_surface_mode);
   _file->table_row("Surface Asgn", _set_list.control_surface_assign_from);
-  // sprintf(buf, "%d,%d,%d,%d", _set_list.reserved[0], _set_list.reserved[1],
-  //         _set_list.reserved[2], _set_list.reserved[3]);
-  // _file->table_row("Reserved", buf);
   _file->table_end();
 }
 

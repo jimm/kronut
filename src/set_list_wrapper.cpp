@@ -9,29 +9,19 @@ void SetListWrapper::set_name(string str) {
 }
 
 int SetListWrapper::slots_per_page() {
-  switch (set_list.reserved[0]) {
-  case 1:
-    return 8;
-  case 2:
-    return 4;
-  case 0:
-  default:
-    return 16;
-  }
-  return 16;
+  return 16 >> set_list.slots_per_page;
 }
 
 void SetListWrapper::set_slots_per_page(int n) {
   switch (n) {
+  case 16:
+    set_list.slots_per_page = 0;
+    break;
   case 8:
-    set_list.reserved[0] = 1;
+    set_list.slots_per_page = 1;
     break;
   case 4:
-    set_list.reserved[0] = 2;
-    break;
-  case 16:
-  default:
-    set_list.reserved[0] = 0;
+    set_list.slots_per_page = 2;
     break;
   }
 }

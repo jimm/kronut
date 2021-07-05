@@ -19,7 +19,8 @@ struct SetList {
   byte band_levels[9];
   byte control_surface_mode;
   byte control_surface_assign_from;
-  byte reserved[4];
+  byte slots_per_page;          // 0 == 16, 1 == 8, 2 == 4
+  byte reserved[3];
 
   SetList() { name[0] = UNINITIALIZED_SET_LIST; }
 
