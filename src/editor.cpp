@@ -23,6 +23,9 @@ void Editor::load_set_list_from_file(char *path) {
   string name;
   string comments;
 
+  // in case we get fewer than 128 slots
+  memset((void *)&_set_list, 0, sizeof(SetList));
+
   _file->open(path, "r");
   while (_file->gets()) {
     if (_file->is_header(1)) {
@@ -49,6 +52,8 @@ void Editor::load_set_list_from_file(char *path) {
       load_set_list_slot_settings_from_file(sw);
 
       ++slot_number;
+      if (slot_number >= 128)
+        break;
     }
     else {
       if (collect_comments) {
