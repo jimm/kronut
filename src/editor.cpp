@@ -26,7 +26,12 @@ void Editor::load_set_list_from_file(char *path) {
   // in case we get fewer than 128 slots
   memset((void *)&_set_list, 0, sizeof(SetList));
 
-  _file->open(path, "r");
+  if (_file->open(path, "r") != 0) {
+    fprintf(stderr, "error: can't open \"%s\" for reading: %s\n",
+            path, strerror(errno));
+    return;
+  }
+
   while (_file->gets()) {
     if (_file->is_header(1)) {
       // Set List name
@@ -127,7 +132,12 @@ void Editor::save_set_list_to_file(char *path) {
   char buf[BUFSIZ];
   SetListWrapper slw(_set_list);
 
-  _file->open(path, "w");
+  if (_file->open(path, "w") == nullptr) {
+    fprintf(stderr, "error: can't open \"%s\" for writing: %s\n",
+            path, strerror(errno));
+    return;
+  }
+
   _file->header(1, slw.name());
   save_set_list_settings_to_file(slw);
   _file->puts("");

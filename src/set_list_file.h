@@ -11,7 +11,7 @@ class SetListFile {
 public:
   SetListFile(char header_char, char table_sep_sep_char);
 
-  void open(const char * const path, const char *mode);
+  FILE *open(const char * const path, const char *mode);
   void close();
 
   // writing

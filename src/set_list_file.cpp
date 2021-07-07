@@ -10,14 +10,20 @@ SetListFile::SetListFile(char header_char, char table_sep_sep_char)
 {
 }
 
-void SetListFile::open(const char * const path, const char *mode) {
-  if (path == nullptr)
-    return;
+FILE *SetListFile::open(const char * const path, const char *mode) {
+  if (path == nullptr) {
+    if (*mode == 'r')
+      return stdin;
+    else
+      return stdout;
+  }
 
+  FILE *retval;
   if (*mode == 'r')
-    freopen(path, mode, stdin);
+    retval = freopen(path, mode, stdin);
   else
-    freopen(path, mode, stdout);
+    retval = freopen(path, mode, stdout);
+  return retval;
 }
 
 void SetListFile::close() {
