@@ -106,8 +106,13 @@ void Kronos::send_sysex(const byte * const sysex_bytes, const UInt32 bytes_to_se
 
 // Wait for next System Exclusive message to be read into `sysex`.
 void Kronos::read_sysex() {
-  while (sysex_state != received && sysex_state != error)
-    ;
+  time_t start = time(0);
+  while (sysex_state != received && sysex_state != error) {
+    if ((time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
+      fprintf(stderr, "error: did not see sysex after waiting %d seconds\n", READ_SYSEX_TIMEOUT_SECS);
+      return;
+    }
+  }
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
@@ -240,6 +245,21 @@ void Kronos::write_current_set_list(SetList &set_list) {
   send_sysex(request_sysex, sizeof(request_sysex));
   read_sysex();
   warn_if_error_reply("write_current_set_list");
+}
+
+void Kronos::save_current_set_list() {
+  byte request_sysex[8];
+  const byte request_sysex_header[] = {
+    SYSEX, KORG_MANUFACTURER_ID,
+    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    FUNC_CODE_STORE_BANK_REQ,
+    static_cast<byte>(OBJ_TYPE_SET_LIST), 0,
+    EOX
+  };
+
+  send_sysex(request_sysex, 8);
+  read_sysex();
+  warn_if_error_reply("save_current_set_list");
 }
 
 void Kronos::goto_set_list(byte n) {

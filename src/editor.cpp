@@ -15,24 +15,23 @@ Editor::Editor(int format)
     _file = new MarkdownSetListFile();
 }
 
-// If path is nullptr, reads from stdin.
-void Editor::load_set_list_from_file(char *path) {
+int Editor::load_set_list_from_file(char *path) {
   SetListWrapper slw(_set_list);
   int slot_number = 0;
   bool collect_comments = false;
   string name;
   string comments;
 
+  if (_file->open(path, "r") == nullptr) {
+    fprintf(stderr, "error: can't open \"%s\" for reading: %s\n",
+            path, strerror(errno));
+    return errno;
+  }
+
   // in case we get fewer than 128 slots
   memset((void *)&_set_list, 0, sizeof(SetList));
 
-  if (_file->open(path, "r") != 0) {
-    fprintf(stderr, "error: can't open \"%s\" for reading: %s\n",
-            path, strerror(errno));
-    return;
-  }
-
-  while (_file->gets()) {
+  while (_file->getline()) {
     if (_file->is_header(1)) {
       // Set List name
       name = _file->header_text(1);
@@ -68,6 +67,8 @@ void Editor::load_set_list_from_file(char *path) {
     }
   }
   _file->close();
+
+  return 0;
 }
 
 void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
@@ -95,10 +96,10 @@ void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
       _set_list.control_surface_mode = atoi(value.c_str());
     else if (setting_name == "Surface Asgn")
       _set_list.control_surface_assign_from = atoi(value.c_str());
-    _file->gets();
+    _file->getline();
   }
 
-  _file->gets();
+  _file->getline();
 }
 
 // Loads set list slot settings and returns original set list slot index.
@@ -121,21 +122,20 @@ void Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
       sw.set_hold_time(atoi(value.c_str()));
     else if (setting_name == "Kbd Track")
       sw.set_keyboard_track(atoi(value.c_str()));
-    _file->gets();
+    _file->getline();
   }
 
-  _file->gets();
+  _file->getline();
 }
 
-// If path is nullptr, writes to stdout.
-void Editor::save_set_list_to_file(char *path) {
+int Editor::save_set_list_to_file(char *path) {
   char buf[BUFSIZ];
   SetListWrapper slw(_set_list);
 
   if (_file->open(path, "w") == nullptr) {
     fprintf(stderr, "error: can't open \"%s\" for writing: %s\n",
             path, strerror(errno));
-    return;
+    return errno;
   }
 
   _file->header(1, slw.name());
@@ -154,6 +154,8 @@ void Editor::save_set_list_to_file(char *path) {
   }
 
   _file->close();
+
+  return 0;
 }
 
 void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {

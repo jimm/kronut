@@ -48,6 +48,8 @@ public:
   virtual void write_current_slot_name(KString *kstr);
   virtual void write_current_slot_comments(KString *kstr);
 
+  void save_current_set_list();
+
   void goto_set_list(byte n);
   KronosMode mode();
   void set_mode(KronosMode mode);

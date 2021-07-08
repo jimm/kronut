@@ -34,7 +34,7 @@ public:
 
   // reading
 
-  bool gets();                  // returns false on EOF
+  bool getline();               // returns false on EOF
   string line() { return _line; }
 
   void skip_blank_lines();

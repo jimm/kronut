@@ -11,38 +11,28 @@ SetListFile::SetListFile(char header_char, char table_sep_sep_char)
 }
 
 FILE *SetListFile::open(const char * const path, const char *mode) {
-  if (path == nullptr) {
-    if (*mode == 'r')
-      return stdin;
-    else
-      return stdout;
-  }
-
-  FILE *retval;
-  if (*mode == 'r')
-    retval = freopen(path, mode, stdin);
-  else
-    retval = freopen(path, mode, stdout);
-  return retval;
+  errno = 0;
+  _fp = fopen(path, mode);
+  return _fp;
 }
 
 void SetListFile::close() {
+  if (_fp != nullptr)
+    fclose(_fp);
 }
 
 // ================ writing ================
 
 void SetListFile::header(int level, char *text) {
   for (int i = 0; i < level; ++i)
-    cout << _header_char;
-  cout << ' ';
-  cout << text << endl << endl;
+    fputc(_header_char, _fp);
+  fprintf(_fp, " %s\n\n", text);
 }
 
 void SetListFile::header(int level, string str) {
   for (int i = 0; i < level; ++i)
-    cout << _header_char;
-  cout << ' ';
-  cout << str << endl << endl;
+    fputc(_header_char, _fp);
+  fprintf(_fp, " %s\n\n", str.c_str());
 }
 
 
@@ -57,33 +47,31 @@ void SetListFile::text(string str) {
 }
 
 void SetListFile::text(KString &kstr) {
-  char *chars = kstr.str();
-
-  puts(chars);
-  putchar('\n');
+  fprintf(_fp, "%s\n\n", kstr.str());
 }
 
 void SetListFile::puts(char *text) {
-  cout << text;
+  fputs(text, _fp);
   if (text[strlen(text) - 1] != '\n')
-    cout << endl;
+    fputc('\n', _fp);
 }
 
 void SetListFile::puts(string str) {
-  char *chars = (char *)str.c_str();
-  puts(chars);
+  fputs(str.c_str(), _fp);
+  if (str[str.size() - 1] != '\n')
+    fputc('\n', _fp);
 }
 
 // ================ writing tables ================
 
 void SetListFile::table_separator() {
-  cout << '|';
+  fputc('|', _fp);
   for (int i = 0; i < COL1_DATA_WIDTH + 2; ++i)
-    cout << '-';
-  cout << _table_sep_sep_char;
+    fputc('-', _fp);
+  fputc(_table_sep_sep_char, _fp);
   for (int i = 0; i < COL2_DATA_WIDTH + 2; ++i)
-    cout << '-';
-  cout << '|' << endl;
+    fputc('-', _fp);
+  fprintf(_fp, "|\n");
 }
 
 void SetListFile::table_headers(const char * const h1, const char * const h2) {
@@ -93,9 +81,7 @@ void SetListFile::table_headers(const char * const h1, const char * const h2) {
 }
 
 void SetListFile::table_row(const char * const col1, const char * const col2) {
-  cout << "| " << std::left << std::setw(COL1_DATA_WIDTH) << col1
-       << " | " << std::setw(COL2_DATA_WIDTH) << col2
-       << " |" << endl;
+  fprintf(_fp, "| %*s | %*s |\n", COL1_DATA_WIDTH, col1, COL2_DATA_WIDTH, col2); 
 }
 
 void SetListFile::table_row(const char * const col1, int value) {
@@ -112,12 +98,17 @@ void SetListFile::table_end() {
 // ================ reading ================
 
 // returns false on EOF
-bool SetListFile::gets() {
-  return !getline(cin, _line).eof();
+bool SetListFile::getline() {
+  char buf[BUFSIZ];
+
+  if (fgets(buf, BUFSIZ, _fp) == 0)
+    return false;
+  _line = buf;
+  return true;
 }
 
 void SetListFile::skip_blank_lines() {
-  while (gets()) {
+  while (getline()) {
     if (trimmed(_line).size() > 0)
       return;
   }
@@ -159,9 +150,9 @@ bool SetListFile::is_table_separator() {
 
 // Assumes we're starting on the first line of the table.
 void SetListFile::skip_table_headers() {
-  gets();
-  gets();
-  gets();
+  getline();
+  getline();
+  getline();
 }
 
 string SetListFile::table_col1() {

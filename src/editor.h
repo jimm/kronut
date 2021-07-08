@@ -19,8 +19,8 @@ class Editor {
 public:
   Editor(int format);
 
-  void load_set_list_from_file(char *path);
-  void save_set_list_to_file(char *path);
+  int load_set_list_from_file(char *path);
+  int save_set_list_to_file(char *path);
 
   SetList &set_list() { return _set_list; }
 

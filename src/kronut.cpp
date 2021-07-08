@@ -233,7 +233,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   opts.input_num = opts.output_num = -1;
   opts.set_list_num = SET_LIST_UNDEFINED;
   opts.format = EDITOR_FORMAT_ORG_MODE;
-  while ((ch = getopt_long(argc, argv, "lc:i:o:nh", longopts, 0)) != -1) {
+  while ((ch = getopt_long(argc, argv, "c:f:hi:lno:s:", longopts, 0)) != -1) {
     switch (ch) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
@@ -297,11 +297,10 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
-  // DEBUG
-  // if (argc == 0) {
-  //   usage(prog_name);
-  //   exit(1);
-  // }
+  if (argc < 2) {
+    usage(prog_name);
+    exit(1);
+  }
 
   int status = 0;
   Kronos kronos(opts.channel);
@@ -312,17 +311,16 @@ int main(int argc, char * const *argv) {
   if (opts.set_list_num != SET_LIST_UNDEFINED)
     kronos.goto_set_list(opts.set_list_num);
 
-  exit(0);                      // DEBUG
-
   if (argv[0][0] == 'l') {
-    path = argc > 1 ? argv[1] : nullptr;
-    editor.load_set_list_from_file(path);
-    kronos.write_current_set_list(editor.set_list());
+    if (editor.load_set_list_from_file(argv[1]) == 0) {
+      kronos.write_current_set_list(editor.set_list());
+      sleep(1);
+      kronos.save_current_set_list();
+    }
   }
   else if (argv[0][0] == 's') {
     kronos.read_current_set_list(editor.set_list());
-    path = argc > 1 ? argv[1] : nullptr;
-    editor.save_set_list_to_file(path);
+    editor.save_set_list_to_file(argv[1]);
   }
   else {
     usage(prog_name);
