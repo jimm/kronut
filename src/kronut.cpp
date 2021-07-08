@@ -10,6 +10,7 @@
 #include "editor.h"
 
 #define CFSTRING_BUF_SIZE 512
+#define SET_LIST_UNDEFINED (-1)
 
 using namespace std;
 
@@ -21,11 +22,13 @@ struct opts {
   int channel;
   int input_num;
   int output_num;
+  int set_list_num;
   int format;
 } opts;
 
 MIDIClientRef my_client_ref;
 MIDIPortRef my_in_port;
+MIDIPortRef my_out_port;
 MIDIEndpointRef kronos_in_end_ref;
 MIDIEndpointRef kronos_out_end_ref;
 
@@ -33,13 +36,6 @@ void midi_read_proc(const MIDIPacketList *pktlist, void *ref_con,
                     void *src_conn_ref_con)
 {
   ((Kronos *)ref_con)->receive_midi(pktlist);
-}
-
-// Returns new CFString ref. Don't forget to call CFRelease(cf_str) when
-// you're done with it.
-CFStringRef cstr_to_cfstring(const char *str) {
-  CFStringRef cf_str;
-  return CFStringCreateWithCString(kCFAllocatorDefault, str, kCFStringEncodingASCII);
 }
 
 void property_string_of(MIDIObjectRef ref, const CFStringRef property_const,
@@ -132,23 +128,11 @@ void print_sources_and_destinations() {
     print_endpoint_ref(i, MIDIGetDestination(i));
 }
 
-void cleanup_midi() {
-  OSStatus err;
-
-  err = MIDIPortDisconnectSource(my_in_port, kronos_out_end_ref);
-  if (err != 0)
-    printf("MIDIPortDisconnectSource error: %d\n", err);
-
-  err = MIDIPortDispose(my_in_port);
-  if (err != 0)
-    printf("MIDIPortDispose error: %d\n", err);
-}
-
 void init_midi(Kronos &kronos, struct opts &opts) {
   OSStatus err;
   CFStringRef cf_str;
 
-  cf_str = cstr_to_cfstring("Kronos Set Editor");
+  cf_str = CFSTR("Kronos Set List Editor");
   err = MIDIClientCreate(cf_str, 0, 0, &my_client_ref);
   if (err != 0)
     printf("MIDIClientCreate error: %d\n", err);
@@ -163,10 +147,17 @@ void init_midi(Kronos &kronos, struct opts &opts) {
     printf("error getting output destination %d\n", opts.output_num);
 
   // My input port
-  cf_str = cstr_to_cfstring("Kronos Set Editor Input");
+  cf_str = CFSTR("Kronos Set List Editor Input");
   err = MIDIInputPortCreate(my_client_ref, cf_str, midi_read_proc, &kronos, &my_in_port);
   if (err != 0)
     printf("MIDIInputPortCreate error: %d\n", err);
+  CFRelease(cf_str);
+
+  // My output port
+  cf_str = CFSTR("Kronos Set List Editor Output");
+  err = MIDIOutputPortCreate(my_client_ref, cf_str, &my_out_port);
+  if (err != 0)
+    printf("MIDIOutputPortCreate error: %d\n", err);
   CFRelease(cf_str);
 
   // Connect Kronos output to my input
@@ -175,10 +166,7 @@ void init_midi(Kronos &kronos, struct opts &opts) {
   if (err != 0)
     printf("MIDIPortConnectSource error: %d\n", err);
 
-  kronos.set_input(my_in_port);
-  kronos.set_output(kronos_in_end_ref);
-
-  atexit(cleanup_midi);
+  kronos.set_output(my_out_port, kronos_in_end_ref);
 }
 
 void help() {
@@ -215,6 +203,7 @@ void usage(const char *prog_name) {
        << "    -l, --list-ports  List all attached MIDI ports" << endl
        << "    -n, --no-midi     No MIDI (ignores bad/unknown MIDI ports)" << endl
        << "    -o, --output N    Output number" << endl
+       << "    -s, --set-list N  Set list number (default is the current set list)" << endl
        << endl
        << "Commands:" << endl
        << endl
@@ -236,11 +225,13 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {"list", no_argument, 0, 'l'},
     {"no-midi", no_argument, 0, 'n'},
     {"output", required_argument, 0, 'o'},
+    {"set-list", required_argument, 0, 's'},
     {0, 0, 0, 0}
   };
 
   opts.list_devices = opts.testing = false;
   opts.input_num = opts.output_num = -1;
+  opts.set_list_num = SET_LIST_UNDEFINED;
   opts.format = EDITOR_FORMAT_ORG_MODE;
   while ((ch = getopt_long(argc, argv, "lc:i:o:nh", longopts, 0)) != -1) {
     switch (ch) {
@@ -266,6 +257,9 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
       break;
     case 'o':
       opts.output_num = atoi(optarg);
+      break;
+    case 's':
+      opts.set_list_num = atoi(optarg);
       break;
     case 'h': default:
       usage(prog_name);
@@ -303,15 +297,22 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
-  if (argc == 0) {
-    usage(prog_name);
-    exit(1);
-  }
+  // DEBUG
+  // if (argc == 0) {
+  //   usage(prog_name);
+  //   exit(1);
+  // }
 
   int status = 0;
   Kronos kronos(opts.channel);
   init_midi(kronos, opts);
   Editor editor(opts.format);
+
+  kronos.set_mode(mode_set_list);
+  if (opts.set_list_num != SET_LIST_UNDEFINED)
+    kronos.goto_set_list(opts.set_list_num);
+
+  exit(0);                      // DEBUG
 
   if (argv[0][0] == 'l') {
     path = argc > 1 ? argv[1] : nullptr;

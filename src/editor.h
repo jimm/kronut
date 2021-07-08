@@ -25,6 +25,7 @@ public:
   SetList &set_list() { return _set_list; }
 
 protected:
+  int _set_list_number;
   SetList _set_list;
   SetListFile *_file;
 

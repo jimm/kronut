@@ -70,7 +70,7 @@
 #define OBJ_TYPE_SET_LIST 0x0D // Set List (index=set list) (SetList.txt)
 #define OBJ_TYPE_DRUM_TRACK_PATTERN 0x0E // Drum Track Pattern (DrumTrackPattern.txt)
 #define OBJ_TYPE_DRUM_TRACK_PATTERN_EVENT 0x0F // Drum Track Pattern Event
-                                  // (DrumTrackPatternEvent.txt)
+                                               // (DrumTrackPatternEvent.txt)
 #define OBJ_TYPE_SET_LIST_SLOT_COMMENTS 0x10 // Set List Slot Comments (bank=set list, index=slot)
 #define OBJ_TYPE_SET_LIST_SLOT_NAME 0x11 // Set List Slot Name (bank=set list, index=slot)
 #define OBJ_TYPE_COMBI_NAME 0x12         // Combi Name
@@ -79,8 +79,16 @@
 #define OBJ_TYPE_WAVE_SEQ_NAME 0x15      // Wave Seq Name
 #define OBJ_TYPE_DRUM_KIT_NAME 0x16      // Drum Kit Name
 #define OBJ_TYPE_SET_LIST_NAME 0x17      // Set List Name (index=set list)
-#define OBJ_TYPE_SONG 0x18   // Song (Song Timbre Set and Song Control in a
-                            // single object. Song.txt)
+#define OBJ_TYPE_SONG 0x18    // Song (Song Timbre Set and Song Control in a
+                              // single object. Song.txt)
+
+#define MODE_COMBINATION 0
+#define MODE_PROGRAM 2
+#define MODE_SEQUENCER 4
+#define MODE_SAMPLING 6
+#define MODE_GLOBAL 7
+#define MODE_DISK 8
+#define MODE_SET_LIST 9
 
 // REPLY_CODES = {
 //   0x00 => "no error",
