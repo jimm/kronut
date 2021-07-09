@@ -39,8 +39,9 @@ string SlotWrapper::name() {
   return chars_to_string(slot.name, SLOT_NAME_LEN);
 }
 
-void SlotWrapper::set_name(string str) {
-  string_to_chars(slot.name, SLOT_NAME_LEN, str);
+// Returns a non-zero value if `str` is too long.
+int SlotWrapper::set_name(string str) {
+  return string_to_chars(slot.name, SLOT_NAME_LEN, str);
 }
 
 SlotPerformanceType SlotWrapper::performance_type() {
@@ -276,6 +277,7 @@ string SlotWrapper::comments() {
   return chars_to_string(slot.comments, SLOT_COMMENTS_LEN);
 }
 
-void SlotWrapper::set_comments(string str) {
-  string_to_chars(slot.comments, SLOT_COMMENTS_LEN, str);
+// Returns a non-zero value if `str` is too long.
+int SlotWrapper::set_comments(string str) {
+  return string_to_chars(slot.comments, SLOT_COMMENTS_LEN, str);
 }

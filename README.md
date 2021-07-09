@@ -5,8 +5,14 @@ Kronut loads and saves Korg Kronos set lists to an editable text file.
 # Getting Kronut
 
 To get Kronut, you'll need to download the
-[source code](https://github.com/jimm/kronut) and compile it. To compile the
-code, run `make`. To run the tests, run `make test`.
+[source code](https://github.com/jimm/kronut) and compile it.
+
+You'll also need to install the http://portmedia.sourceforge.net/portmidi/
+library and headers. If you use [Homebrew](https://brew.sh/) then you can
+install it via `brew install portmidi`.
+
+To compile the code, run `make`. To compile and run the tests, run `make
+test`.
 
 # Running Kronut
 
@@ -30,12 +36,11 @@ and writing it to a file (or to stdout). The load command reads from a file
 it doesn't save the set list. You'll have to do that on the Kronos.
 
 By default, `kronut` loads and saves the current set list but there's a
-command line option that lets you specify what set list to save or load.
+command line option that lets you specify which set list to save or load.
 
 Files are written in either the [Markdown](https://www.markdownguide.org/)
 or [Org Mode](https://orgmode.org/) format. The default is Org Mode. To use
-Org Mode, set the environment variable `$KRONUT_FILE_MODE` to "org" (or any
-string beginning with the letter "o" or "O").
+Markdown, use the `--format` command line argument.
 
 ### Too-Long Name or Comments
 

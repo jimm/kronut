@@ -35,7 +35,8 @@ int Editor::load_set_list_from_file(char *path) {
     if (_file->is_header(1)) {
       // Set List name
       name = _file->header_text(1);
-      slw.set_name(name);
+      if (slw.set_name(name) != 0)
+        fprintf(stderr, "warning: set list name \"%s\" is too long and will be truncated", name.c_str());
 
       _file->skip_blank_lines();
       load_set_list_settings_from_file(slw);
@@ -51,8 +52,15 @@ int Editor::load_set_list_from_file(char *path) {
 
       Slot &slot = _set_list.slots[slot_number];
       SlotWrapper sw(slot);
-      sw.set_name(name);
-      sw.set_comments(trimmed(comments));
+      if (sw.set_name(name) != 0)
+        fprintf(stderr, "warning: slot %03d name \"%s\" is too long and will be truncated",
+                slot_number, name.c_str());
+
+      string trimmed_comments = trimmed(comments);
+      if (sw.set_comments(trimmed_comments) != 0)
+        fprintf(stderr, "warning: slot %03d comments \"%s...\" are too long and will be truncated",
+                slot_number, comments.substr(0, 20).c_str());
+
       load_set_list_slot_settings_from_file(sw);
 
       ++slot_number;

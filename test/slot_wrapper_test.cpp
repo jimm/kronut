@@ -34,6 +34,17 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
       REQUIRE(memcmp(slot.name, buf, SLOT_NAME_LEN) == 0);
     }
 
+    SECTION("set name truncation") {
+      char buf[BUFSIZ];
+      strcpy(buf, "this is too long so we should see a non-zero return from set_name");
+      REQUIRE(strlen(buf) > SLOT_NAME_LEN); // sanity check
+
+      REQUIRE(sw.set_name(buf) != 0);
+      string returned = sw.name();
+      buf[SLOT_NAME_LEN] = 0;
+      REQUIRE(returned == buf);
+    }
+
     SECTION("get comments") {
       memcpy((void *)slot.comments, (void *)test_name, (size_t)strlen(test_name));
       REQUIRE(sw.comments() == test_name);

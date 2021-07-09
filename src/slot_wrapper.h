@@ -57,7 +57,7 @@ public:
   SlotWrapper(Slot &s) : slot(s) {}
 
   string name();
-  void set_name(string str);
+  int set_name(string str);
 
   SlotPerformanceType performance_type();
   void set_performance_type(SlotPerformanceType val);
@@ -98,7 +98,7 @@ public:
   void set_xpose(int xpose);
 
   string comments();
-  void set_comments(string str);
+  int set_comments(string str);
 };
 
 #endif /* SLOT_WRAPPER_H */

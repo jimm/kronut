@@ -17,8 +17,9 @@ protected:
   // byte buffers.
   string chars_to_string(byte *, int len);
 
-  // Writes a string into a byte array, handling null termination.
-  void string_to_chars(byte *, int len, string str);
+  // Writes a string into a byte array, handling truncation and null
+  // termination. Returns 0 if `str` is longer than `len`, else returns 0.
+  int string_to_chars(byte *, int len, string str);
 };
 
 #endif /* STRUCT_WRAPPER_H */

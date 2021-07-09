@@ -16,7 +16,7 @@ public:
   SetListWrapper(SetList &s) : set_list(s) {}
 
   string name();
-  void set_name(string str);
+  int set_name(string str);
 
   int slots_per_page();
   void set_slots_per_page(int n);

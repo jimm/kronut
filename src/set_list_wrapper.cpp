@@ -4,8 +4,9 @@ string SetListWrapper::name() {
   return chars_to_string(set_list.name, SET_LIST_NAME_LEN);
 }
 
-void SetListWrapper::set_name(string str) {
-  string_to_chars(set_list.name, SET_LIST_NAME_LEN, str);
+// Returns a non-zero value if `str` is too long.
+int SetListWrapper::set_name(string str) {
+  return string_to_chars(set_list.name, SET_LIST_NAME_LEN, str);
 }
 
 int SetListWrapper::slots_per_page() {
