@@ -106,13 +106,8 @@ void Kronos::send_sysex(const byte * const sysex_bytes, const UInt32 bytes_to_se
 
 // Wait for next System Exclusive message to be read into `sysex`.
 void Kronos::read_sysex() {
-  time_t start = time(0);
-  while (sysex_state != received && sysex_state != error) {
-    if ((time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
-      fprintf(stderr, "error: did not see sysex after waiting %d seconds\n", READ_SYSEX_TIMEOUT_SECS);
-      return;
-    }
-  }
+  while (sysex_state != received && sysex_state != error)
+    ;
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {

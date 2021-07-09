@@ -314,8 +314,16 @@ int main(int argc, char * const *argv) {
   if (argv[0][0] == 'l') {
     if (editor.load_set_list_from_file(argv[1]) == 0) {
       kronos.write_current_set_list(editor.set_list());
-      sleep(1);
-      kronos.save_current_set_list();
+
+      // FIXME I don't know why this doesn't save the set list on the
+      // Kronos. Instead, it erases/resets it. The docs in
+      // KRONOS_MIDI_SysEx.txt say that sending the set list via the Object
+      // Dump message then calling Store Bank Request should work. I'm
+      // sending a Current Object Dump, maybe that's it.
+      //
+      // Also, for some reason the reply doesn't come from the Kronos.
+
+      // kronos.save_current_set_list();
     }
   }
   else if (argv[0][0] == 's') {
