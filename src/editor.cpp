@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <sys/errno.h>
 #include "editor.h"
 #include "set_list_wrapper.h"
 #include "slot_wrapper.h"
