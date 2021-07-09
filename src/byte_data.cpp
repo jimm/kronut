@@ -1,3 +1,4 @@
+#include <string.h>
 #include "byte_data.h"
 
 #define CHUNK_SIZE 1024
@@ -22,4 +23,13 @@ void ByteData::append(byte b) {
     bytes = (byte *)realloc(bytes, allocated_size);
   }
   bytes[length++] = b;
+}
+
+void ByteData::append(byte *b, int len) {
+  if (length + len >= allocated_size) {
+    allocated_size += allocated_size;
+    bytes = (byte *)realloc(bytes, allocated_size);
+  }
+  memcpy(bytes + length, b, len);
+  length += len;
 }

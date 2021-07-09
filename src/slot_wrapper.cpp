@@ -52,6 +52,11 @@ void SlotWrapper::set_performance_type(SlotPerformanceType val) {
 }
 
 const char * const SlotWrapper::performance_type_name() {
+  int index = (int)performance_type();
+  if (index < 0 || index >= (sizeof(SLOT_PERF_TYPE_NAMES) / sizeof(const char * const))) {
+    fprintf(stderr, "error: illegal performance type value %d\n", index);
+    exit(1);
+  }
   return SLOT_PERF_TYPE_NAMES[(int)performance_type()];
 }
 

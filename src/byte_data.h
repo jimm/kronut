@@ -17,6 +17,7 @@ public:
 
   void clear();
   void append(byte b);
+  void append(byte *bytes, int len);
 
 private:
   byte *bytes;

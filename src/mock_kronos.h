@@ -16,14 +16,14 @@ public:
   MockKronos(byte channel);
   ~MockKronos();
 
-  void receive_midi(const MIDIPacketList *pktlist) {}
+  void receive_midi() {}
   void write_current_slot_name(KString *kstr) { name = kstr->str(); }
   void write_current_slot_comments(KString *kstr) { comments = kstr->str(); }
 
 protected:
   void read_sysex() {}
   KString * read_current_string(int obj_type, byte pad);
-  void send_sysex(const byte * const sysex, UInt32 bytes_to_send) {}
+  void send_sysex(const byte * const sysex) {}
   void write_current_string(int obj_type, KString *kstr) {}
 };
 

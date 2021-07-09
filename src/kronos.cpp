@@ -9,10 +9,20 @@
 #include "set_list.h"
 #include "utils.h"
 
+#define MIDI_BUFSIZ 1024
+#define SYSEX_BUF_EVENTS 1024
+
 #define READ_SYSEX_TIMEOUT_SECS 5
 #define TIMEOUT_ERROR_REPLY 100
 
 #define is_realtime(b) ((b) >= CLOCK)
+
+enum SysexState {
+  waiting,
+  receiving,
+  received,
+  error
+};
 
 static const char * const error_format = "Kronos::%s sysex error response: %s\n";
 static Kronos *kronos_instance;
@@ -41,88 +51,97 @@ Kronos *Kronos_instance() {
 // ================ allocation ================
 
 // chan must be 0-15
-Kronos::Kronos(byte chan) : channel(chan), sysex_state(idle) {
+Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
+  : channel(chan)
+{
+  if (input_device_num >= 0) {  // negative means we're testing
+    PmError err = Pm_OpenInput(&input, input_device_num, 0, MIDI_BUFSIZ, 0, 0);
+    if (err != 0) {
+      fprintf(stderr, "error opening PortMidi input stream: %s\n", Pm_GetErrorText(err));
+      exit(1);
+    }
+  }
+
+  if (output_device_num >= 0) {
+    PmError err = Pm_OpenOutput(&output, output_device_num, 0, MIDI_BUFSIZ, 0, 0, 0);
+    if (err != 0) {
+      fprintf(stderr, "error opening PortMidi output stream: %s\n", Pm_GetErrorText(err));
+      exit(1);
+    }
+  }
+
   kronos_instance = this;
 }
 
 Kronos::~Kronos() {
   if (kronos_instance == this)
-    kronos_instance = 0;
+    kronos_instance = nullptr;
 }
 
-void Kronos::set_output(MIDIPortRef oport, MIDIEndpointRef oref) {
-  output_port = oport;
-  output_ref = oref;
+void Kronos::send_sysex(const byte * const sysex_bytes) {
+  PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
+  if (err != 0) {
+    fprintf(stderr, "error writing sysex: %s\n", Pm_GetErrorText(err));
+    exit(1);
+  }
 }
 
-void Kronos::receive_midi(const MIDIPacketList *packet_list) {
-  const MIDIPacket *packet = &packet_list->packet[0];
-  for (int i = 0; i < packet_list->numPackets; ++i) {
-    for (int j = 0; j < packet->length; ++j) {
-      byte b = packet->data[j];
+// Wait for next System Exclusive message to be read into `sysex`. We first
+// receive and dump everything as quickly as we can into a ByteData. Then we
+// post-process it, removing realtime bytes and any bytes before or after
+// the sysex.
+void Kronos::read_sysex() {
+  PmEvent buf[SYSEX_BUF_EVENTS];
+  ByteData raw_bytes;
+  SysexState state;
+
+  state = waiting;
+  while (state != received && state != error) {
+    if (Pm_Poll(input) == TRUE) {
+      int n = Pm_Read(input, buf, SYSEX_BUF_EVENTS);
+      for (int i = 0; i < n; ++i) {
+        PmMessage msg = buf[i].message;
+        for (int j = 0; j < 4; ++j) {
+          byte b = msg & 0xff;
+          msg >>= 8;
+          raw_bytes.append(b);
+          if (b == EOX)
+            state = received;
+        }
+      }
+    }
+  }
+
+  // Filter out realtime bytes and bytes before and after sysex bytes.
+  sysex.clear();
+  state = waiting;
+  for (size_t i = 0; i < raw_bytes.size() && state != received && state != error; i += 4) {
+    for (int j = 0; j < 4; ++j) {
+      byte b = raw_bytes[i + j];
       switch (b) {
       case SYSEX:
-        sysex_state = receiving;
-        sysex.clear();
+        state = receiving;
         sysex.append(b);
         break;
       case EOX:
         sysex.append(b);
-        sysex_state = received;
+        state = received;
         break;
       default:
-        if (sysex_state == receiving && !is_realtime(b))
+        if (state == receiving && !is_realtime(b))
           sysex.append(b);
         break;
       }
     }
-    packet = MIDIPacketNext(packet);
   }
-}
-
-void Kronos::send_sysex(const byte * const sysex_bytes, const UInt32 bytes_to_send) {
-  // In anticipation of receiving a response (the Kronos always sends a
-  // response), we clear the sysex buffer and start waiting.
-  sysex.clear();
-  sysex_state = waiting;
-
-  MIDISysexSendRequest req;
-
-  req.destination = output_ref;
-  req.data = sysex_bytes;
-  req.bytesToSend = bytes_to_send;
-  req.complete = false;
-  req.completionProc = 0;
-  req.completionRefCon = 0;
-
-  while (req.bytesToSend > 0) {
-    OSStatus result = MIDISendSysex(&req);
-    if (result != 0) {
-      fprintf(stderr, "MIDISendSysex error: %d\n", result);
-      return;
-    }
-  }
-}
-
-// Wait for next System Exclusive message to be read into `sysex`.
-void Kronos::read_sysex() {
-  while (sysex_state != received && sysex_state != error)
-    ;
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
-  byte buf[3];
-  buf[0] = status;
-  buf[1] = data1;
-  buf[2] = data2;
-
-  MIDIPacketList pktlist;
-  MIDIPacket *packet = MIDIPacketListInit(&pktlist);
-  (void)MIDIPacketListAdd(&pktlist, sizeof(pktlist), packet, 0, 3, buf);
-
-  OSStatus result = MIDISend(output_port, output_ref, &pktlist);
-  if (result != 0)
-    fprintf(stderr, "MIDISend error: %d\n", result);
+  PmError err = Pm_WriteShort(output, 0, Pm_Message(status, data1, data2));
+  if (err != 0) {
+    fprintf(stderr, "error writing channel message: %s\n", Pm_GetErrorText(err));
+    exit(1);
+  }
 }
 
 bool Kronos::error_reply_seen() {
@@ -159,7 +178,7 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
-  send_sysex(request_sysex, sizeof(request_sysex));
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("read_current_string");
 
@@ -186,7 +205,7 @@ void Kronos::read_current_set_list(SetList &set_list) {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  send_sysex(request_sysex, sizeof(request_sysex));
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("read_current_set_list");
 
@@ -210,7 +229,7 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   memcpy(request_sysex + 7, kstr->midi_bytes, kstr->midi_len);
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
-  send_sysex(request_sysex, sizeof(request_sysex));
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("write_current_string");
 }
@@ -237,7 +256,7 @@ void Kronos::write_current_set_list(SetList &set_list) {
   memcpy(request_sysex + 7, midi_data.midi_bytes, midi_data.midi_len);
   request_sysex[7 + midi_data.midi_len] = EOX;  // end of sysex
 
-  send_sysex(request_sysex, sizeof(request_sysex));
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("write_current_set_list");
 }
@@ -252,7 +271,7 @@ void Kronos::save_current_set_list() {
     EOX
   };
 
-  send_sysex(request_sysex, 8);
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("save_current_set_list");
 }
@@ -270,7 +289,7 @@ KronosMode Kronos::mode() {
     FUNC_CODE_MODE_REQ, EOX
   };
 
-  send_sysex(request_sysex, 6);
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("mode");
 
@@ -285,14 +304,16 @@ void Kronos::set_mode(KronosMode mode) {
     FUNC_CODE_MODE_CHANGE, (byte)mode, EOX
   };
 
-  send_sysex(request_sysex, 7);
+  send_sysex(request_sysex);
   read_sysex();
   warn_if_error_reply("set_mode");
 }
 
 void Kronos::warn_if_error_reply(const char * const func_name) {
-  if (error_reply_seen())
+  if (error_reply_seen()) {
     fprintf(stderr, "Kronos::%s received an error response: %s\n", func_name, error_reply_message());
+    exit(1);
+  }
 }
 
 void Kronos::dump_sysex(const char * const msg) {

@@ -1,15 +1,14 @@
-#include <CoreMIDI/MIDIServices.h>
 #include <getopt.h>
 #include <ctype.h>
 #include <iostream>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <portmidi.h>
 #include "slot.h"
 #include "kronos.h"
 #include "editor.h"
 
-#define CFSTRING_BUF_SIZE 512
 #define SET_LIST_UNDEFINED (-1)
 
 using namespace std;
@@ -18,7 +17,6 @@ typedef unsigned char byte;
 
 struct opts {
   bool list_devices;
-  bool testing;
   int channel;
   int input_num;
   int output_num;
@@ -26,170 +24,38 @@ struct opts {
   int format;
 } opts;
 
-MIDIClientRef my_client_ref;
-MIDIPortRef my_in_port;
-MIDIPortRef my_out_port;
-MIDIEndpointRef kronos_in_end_ref;
-MIDIEndpointRef kronos_out_end_ref;
-
-void midi_read_proc(const MIDIPacketList *pktlist, void *ref_con,
-                    void *src_conn_ref_con)
-{
-  ((Kronos *)ref_con)->receive_midi(pktlist);
-}
-
-void property_string_of(MIDIObjectRef ref, const CFStringRef property_const,
-                        char *buf)
-{
-  CFStringRef pvalue;
-  MIDIObjectGetStringProperty(ref, property_const, &pvalue);
-  if (pvalue == 0)
-    buf[0] = 0;
-  else {
-    CFStringGetCString(pvalue, buf, CFSTRING_BUF_SIZE, 0);
-    CFRelease(pvalue);
-  }
-}
-
-// Copies name property of MIDIObject into buf.
-void name_of(MIDIObjectRef ref, char *buf) {
-  property_string_of(ref, kMIDIPropertyName, buf);
-}
-
-// Copies name property of MIDIObject into buf.
-void manufacturer_of(MIDIObjectRef ref, char *buf) {
-  property_string_of(ref, kMIDIPropertyManufacturer, buf);
-}
-
-// Copies name property of MIDIObject into buf.
-void model_of(MIDIObjectRef ref, char *buf) {
-  property_string_of(ref, kMIDIPropertyModel, buf);
-}
-
 int find_kronos_input_num() {
-  char val[CFSTRING_BUF_SIZE];
-  ItemCount i, ndev = MIDIGetNumberOfSources();
-
-  for (i = 0; i < ndev; ++i) {
-    MIDIEndpointRef end_ref = MIDIGetSource(i);
-    manufacturer_of(end_ref, val);
-    if (strcmp(val, "KORG INC.") == 0) {
-      model_of(end_ref, val);
-      if (strcmp(val, "KRONOS") == 0)
-        return i;
-    }
+  for (int i = 0; i < Pm_CountDevices(); ++i) {
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
+    if (info->input == 1 && strncmp("KRONOS KEYBOARD", info->name, 15) == 0)
+      return i;
   }
   return -1;
 }
 
 int find_kronos_output_num() {
-  char val[CFSTRING_BUF_SIZE];
-  ItemCount i, ndev = MIDIGetNumberOfDestinations();
-
-  for (i = 0; i < ndev; ++i) {
-    MIDIEndpointRef end_ref = MIDIGetDestination(i);
-    manufacturer_of(end_ref, val);
-    if (strcmp(val, "KORG INC.") == 0) {
-      model_of(end_ref, val);
-      if (strcmp(val, "KRONOS") == 0)
-        return i;
-    }
+  for (int i = 0; i < Pm_CountDevices(); ++i) {
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
+    if (info->output == 1 && strncmp("KRONOS SOUND", info->name, 12) == 0)
+      return i;
   }
   return -1;
 }
 
-void print_endpoint_ref(long i, MIDIEndpointRef end_ref) {
-  char val[CFSTRING_BUF_SIZE];
-
-  printf("%3ld: ", i);
-
-  model_of(end_ref, val);
-  if (val[0] != 0)
-    printf("%s, ", val);
-
-  name_of(end_ref, val);
-  printf("%s ", val);
-
-  manufacturer_of(end_ref, val);
-  if (val[0] != 0)
-    printf("(%s)", val);
-  printf("\n");
+void close_midi() {
+  Pm_Terminate();
 }
 
-void print_sources_and_destinations() {
-  ItemCount i, ndev = MIDIGetNumberOfSources();
-  printf("Inputs:\n");
-  for (i = 0; i < ndev; ++i)
-    print_endpoint_ref(i, MIDIGetSource(i));
+void init_midi() {
+  PmError err = Pm_Initialize();
+  if (err != 0) {
+    fprintf(stderr, "error initializing PortMidi: %s\n", Pm_GetErrorText(err));
+    exit(1);
+  }
 
-  ndev = MIDIGetNumberOfDestinations();
-  printf("Outputs\n");
-  for (i = 0; i < ndev; ++i)
-    print_endpoint_ref(i, MIDIGetDestination(i));
-}
-
-void init_midi(Kronos &kronos, struct opts &opts) {
-  OSStatus err;
-  CFStringRef cf_str;
-
-  cf_str = CFSTR("Kronos Set List Editor");
-  err = MIDIClientCreate(cf_str, 0, 0, &my_client_ref);
-  if (err != 0)
-    printf("MIDIClientCreate error: %d\n", err);
-  CFRelease(cf_str);
-
-  // Kronos endpoints
-  kronos_in_end_ref = MIDIGetDestination(opts.input_num);
-  kronos_out_end_ref = MIDIGetSource(opts.output_num);
-  if (kronos_in_end_ref == 0)
-    printf("error getting input destination %d\n", opts.input_num);
-  if (kronos_out_end_ref == 0)
-    printf("error getting output destination %d\n", opts.output_num);
-
-  // My input port
-  cf_str = CFSTR("Kronos Set List Editor Input");
-  err = MIDIInputPortCreate(my_client_ref, cf_str, midi_read_proc, &kronos, &my_in_port);
-  if (err != 0)
-    printf("MIDIInputPortCreate error: %d\n", err);
-  CFRelease(cf_str);
-
-  // My output port
-  cf_str = CFSTR("Kronos Set List Editor Output");
-  err = MIDIOutputPortCreate(my_client_ref, cf_str, &my_out_port);
-  if (err != 0)
-    printf("MIDIOutputPortCreate error: %d\n", err);
-  CFRelease(cf_str);
-
-  // Connect Kronos output to my input
-  // 0 is conn ref_con
-  err = MIDIPortConnectSource(my_in_port, kronos_out_end_ref, 0);
-  if (err != 0)
-    printf("MIDIPortConnectSource error: %d\n", err);
-
-  kronos.set_output(my_out_port, kronos_in_end_ref);
-}
-
-void help() {
-  puts("  e: edit set list; reads from Kronos if not already read");
-  puts("  r: read current set list from Kronos");
-  puts("  w: write set list to Kronos (does not save it)");
-  puts("  l: load set list file");
-  puts("  s: save set list file");
-  puts("  h: this help (also '?')");
-  puts("  q: quit");
-}
-
-char * trim(char *p) {
-  char *end;
-
-  while (isspace(*p)) ++p;
-  if (*p == '\0') return p;
-
-  end = p + strlen(p) - 2;
-  while (end > p && isspace(*end)) --end;
-  *end = '\0';
-
-  return p;
+  // Pm_Initialize(), when it looks for default devices, can set errno to a
+  // non-zero value. Reinitialize it here.
+  errno = 0;
 }
 
 void usage(const char *prog_name) {
@@ -201,21 +67,20 @@ void usage(const char *prog_name) {
        << "    -h, --help        This help" << endl
        << "    -i, --input N     Input number" << endl
        << "    -l, --list-ports  List all attached MIDI ports" << endl
-       << "    -n, --no-midi     No MIDI (ignores bad/unknown MIDI ports)" << endl
        << "    -o, --output N    Output number" << endl
        << "    -s, --set-list N  Set list number (default is the current set list)" << endl
        << endl
        << "Commands:" << endl
        << endl
-       << "    load [FILE]  Reads a file or stdin into the current set list." << endl
-       << "                 Remember: kronut does not save the set list; you" << endl
-       << "                 must do that yourself on the Kronos." << endl
+       << "    load FILE  Reads a file or stdin into the current set list." << endl
+       << "               Remember: kronut does not save the set list; you" << endl
+       << "               must do that yourself on the Kronos." << endl
        << endl
-       << "    save [FILE]  Saves the current set list into a file or stdout." << endl;
+       << "    save FILE  Saves the current set list into a file or stdout." << endl;
 }
 
 void parse_command_line(int argc, char * const *argv, struct opts &opts) {
-  int ch, testing = false;
+  int ch;
   char *prog_name = argv[0];
   static struct option longopts[] = {
     {"channel", required_argument, 0, 'c'},
@@ -229,7 +94,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {0, 0, 0, 0}
   };
 
-  opts.list_devices = opts.testing = false;
+  opts.list_devices = false;
   opts.input_num = opts.output_num = -1;
   opts.set_list_num = SET_LIST_UNDEFINED;
   opts.format = EDITOR_FORMAT_ORG_MODE;
@@ -252,9 +117,6 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     case 'l':
       opts.list_devices = true;
       break;
-    case 'n':
-      opts.testing = true;
-      break;
     case 'o':
       opts.output_num = atoi(optarg);
       break;
@@ -268,6 +130,24 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   }
 }
 
+void list_devices(const char * const type_name, bool show_inputs) {
+  printf("%s:\n", type_name);
+  for (int i = 0; i < Pm_CountDevices(); ++i) {
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
+    if (show_inputs ? (info->input == 1) : (info->output == 1)) {
+      const char *name = info->name;
+      const char *q = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
+      printf("  %2d: %s%s%s\n", i, q, name, q);
+    }
+  }
+}
+
+// type is 0 for input, 1 for output
+void list_all_devices() {
+  list_devices("Inputs", true);
+  list_devices("Outputs", false);
+}
+
 int main(int argc, char * const *argv) {
   struct opts opts;
   const char *prog_name = argv[0];
@@ -278,7 +158,7 @@ int main(int argc, char * const *argv) {
   argv += optind;
 
   if (opts.list_devices) {
-    print_sources_and_destinations();
+    list_all_devices();
     exit(0);
   }
 
@@ -303,8 +183,8 @@ int main(int argc, char * const *argv) {
   }
 
   int status = 0;
-  Kronos kronos(opts.channel);
-  init_midi(kronos, opts);
+  Kronos kronos(opts.channel, opts.input_num, opts.output_num);
+  init_midi();
   Editor editor(opts.format);
 
   kronos.set_mode(mode_set_list);
@@ -335,6 +215,7 @@ int main(int argc, char * const *argv) {
     status = 1;
   }
 
+  close_midi();
   exit(status);
   return status;
 }

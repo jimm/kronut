@@ -1,7 +1,7 @@
 #ifndef KRONOS_H
 #define KRONOS_H
 
-#include <CoreMIDI/MIDIServices.h>
+#include <portmidi.h>
 #include "consts.h"
 #include "set_list.h"
 #include "midi_data.h"
@@ -11,14 +11,6 @@
 using namespace std;
 
 typedef unsigned char byte;
-
-enum SysexState {
-  idle,
-  waiting,
-  receiving,
-  received,
-  error
-};
 
 enum KronosMode {
   mode_combination = MODE_COMBINATION,
@@ -33,12 +25,8 @@ enum KronosMode {
 class Kronos {
 public:
 
-  Kronos(byte channel);
+  Kronos(byte channel, int input_device_num, int output_device_num);
   ~Kronos();
-
-  void set_output(MIDIPortRef output_port, MIDIEndpointRef output_ref);
-
-  virtual void receive_midi(const MIDIPacketList *pktlist);
 
   void read_current_set_list(SetList &set_list);
   void write_current_set_list(SetList &set_list);
@@ -60,15 +48,14 @@ public:
   void dump_sysex(const char * const msg);
 
 protected:
-  MIDIPortRef output_port;
-  MIDIEndpointRef output_ref;
+  PortMidiStream *input;
+  PortMidiStream *output;
   byte channel;
-  SysexState sysex_state;
   ByteData sysex;
 
   virtual void read_sysex();
   virtual KString * read_current_string(int obj_type, byte pad);
-  virtual void send_sysex(const byte * const sysex, UInt32 bytes_to_send);
+  virtual void send_sysex(const byte * const sysex);
   void send_channel_message(byte status, byte data1, byte data2);
   virtual void write_current_string(int obj_type, KString *kstr);
 
