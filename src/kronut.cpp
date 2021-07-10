@@ -20,7 +20,6 @@ struct opts {
   int channel;
   int input_num;
   int output_num;
-  int set_list_num;
   int format;
 } opts;
 
@@ -60,7 +59,7 @@ void init_midi() {
 
 void usage(const char *prog_name) {
   cerr << "usage: " << basename((char *)prog_name)
-       << "[-l] [-i N] [-o N] [-c N] [-n] [-h] COMMAND [file]" << endl
+       << "[-l] [-i N] [-o N] [-c N] [-n] [-h] COMMAND SET_LIST_NUM file" << endl
        << endl
        << "    -c, --channel N   Kronos general MIDI channel (1-16, default 1)" << endl
        << "    -f, --format FMT  Format: \"o\" (Org Mode, default) or \"m\" (Markdown)" << endl
@@ -68,15 +67,14 @@ void usage(const char *prog_name) {
        << "    -i, --input N     Input number" << endl
        << "    -l, --list-ports  List all attached MIDI ports" << endl
        << "    -o, --output N    Output number" << endl
-       << "    -s, --set-list N  Set list number (default is the current set list)" << endl
        << endl
        << "Commands:" << endl
        << endl
-       << "    load FILE  Reads a file or stdin into the current set list." << endl
+       << "    load N FILE  Reads a file or stdin into the current set list." << endl
        << "               Remember: kronut does not save the set list; you" << endl
        << "               must do that yourself on the Kronos." << endl
        << endl
-       << "    save FILE  Saves the current set list into a file or stdout." << endl;
+       << "    save N FILE  Saves the current set list into a file or stdout." << endl;
 }
 
 void parse_command_line(int argc, char * const *argv, struct opts &opts) {
@@ -90,15 +88,13 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {"list", no_argument, 0, 'l'},
     {"no-midi", no_argument, 0, 'n'},
     {"output", required_argument, 0, 'o'},
-    {"set-list", required_argument, 0, 's'},
     {0, 0, 0, 0}
   };
 
   opts.list_devices = false;
   opts.input_num = opts.output_num = -1;
-  opts.set_list_num = SET_LIST_UNDEFINED;
   opts.format = EDITOR_FORMAT_ORG_MODE;
-  while ((ch = getopt_long(argc, argv, "c:f:hi:lno:s:", longopts, 0)) != -1) {
+  while ((ch = getopt_long(argc, argv, "c:f:hi:lno:", longopts, 0)) != -1) {
     switch (ch) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
@@ -119,9 +115,6 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
       break;
     case 'o':
       opts.output_num = atoi(optarg);
-      break;
-    case 's':
-      opts.set_list_num = atoi(optarg);
       break;
     case 'h': default:
       usage(prog_name);
@@ -177,23 +170,22 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
-  if (argc < 2) {
+  if (argc < 3 || !isdigit(argv[1][0])) {
     usage(prog_name);
     exit(1);
   }
 
   int status = 0;
+  char command = argv[0][0];
+  int set_list_num = atoi(argv[1]);
   Kronos kronos(opts.channel, opts.input_num, opts.output_num);
   init_midi();
   Editor editor(opts.format);
 
-  kronos.set_mode(mode_set_list);
-  if (opts.set_list_num != SET_LIST_UNDEFINED)
-    kronos.goto_set_list(opts.set_list_num);
-
-  if (argv[0][0] == 'l') {
+  switch (command) {
+  case 'l':
     if (editor.load_set_list_from_file(argv[1]) == 0) {
-      kronos.write_current_set_list(editor.set_list());
+      kronos.write_set_list(set_list_num, editor.set_list());
 
       // FIXME I don't know why this doesn't save the set list on the
       // Kronos. Instead, it erases/resets it. The docs in
@@ -205,12 +197,12 @@ int main(int argc, char * const *argv) {
 
       // kronos.save_current_set_list();
     }
-  }
-  else if (argv[0][0] == 's') {
-    kronos.read_current_set_list(editor.set_list());
+    break;
+  case 's':
+    kronos.read_set_list(set_list_num, editor.set_list());
     editor.save_set_list_to_file(argv[1]);
-  }
-  else {
+    break;
+  default:
     usage(prog_name);
     status = 1;
   }

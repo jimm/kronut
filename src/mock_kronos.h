@@ -21,9 +21,12 @@ public:
   void write_current_slot_comments(KString *kstr) { comments = kstr->str(); }
 
 protected:
-  void read_sysex() {}
-  KString * read_current_string(int obj_type, byte pad);
   void send_sysex(const byte * const sysex) {}
+  void read_sysex() {}
+  void get(const byte * const, const char * const) {}
+  void send_channel_message(byte, byte, byte) {}
+
+  KString * read_current_string(int obj_type, byte pad);
   void write_current_string(int obj_type, KString *kstr) {}
 };
 

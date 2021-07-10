@@ -78,6 +78,8 @@ Kronos::~Kronos() {
     kronos_instance = nullptr;
 }
 
+// ================ sysex I/O ================
+
 void Kronos::send_sysex(const byte * const sysex_bytes) {
   PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
   if (err != 0) {
@@ -136,6 +138,15 @@ void Kronos::read_sysex() {
   }
 }
 
+void Kronos::get(const byte * const request_sysex, const char * const func_name) {
+  send_sysex(request_sysex);
+  read_sysex();
+  if (error_reply_seen()) {
+    fprintf(stderr, "Kronos::%s received an error response: %s\n", func_name, error_reply_message());
+    exit(1);
+  }
+}
+
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
   PmError err = Pm_WriteShort(output, 0, Pm_Message(status, data1, data2));
   if (err != 0) {
@@ -143,6 +154,8 @@ void Kronos::send_channel_message(byte status, byte data1, byte data2) {
     exit(1);
   }
 }
+
+// ================ error detection ================
 
 bool Kronos::error_reply_seen() {
   return sysex[4] == FUNC_CODE_REPLY && sysex[5] > 0;
@@ -170,6 +183,8 @@ const char * const Kronos::error_reply_message() {
   return error_reply_messages[error_index];
 }
 
+// ================ reading objects ================
+
 // Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
   const byte request_sysex[] = {
@@ -178,9 +193,7 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("read_current_string");
+  get(request_sysex, "read_current_string");
 
   int start = 7;
   int end = start;
@@ -198,16 +211,17 @@ KString * Kronos::read_current_slot_comments() {
   return read_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, 0);
 }
 
-void Kronos::read_current_set_list(SetList &set_list) {
+void Kronos::read_set_list(int n, SetList &set_list) {
+  set_mode(mode_set_list);
+  goto_set_list(n);
+
   const byte request_sysex[] = {
     SYSEX, KORG_MANUFACTURER_ID,
     static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("read_current_set_list");
+  get(request_sysex, "read_current_set_list");
 
   int start = 7;
   int end = start;
@@ -216,6 +230,8 @@ void Kronos::read_current_set_list(SetList &set_list) {
   MIDIData midi_data(MD_INIT_MIDI, &sysex.data()[start], end - start);
   memcpy((void *)&set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
 }
+
+// ================ writing objects ================
 
 void Kronos::write_current_string(int obj_type, KString *kstr) {
   byte request_sysex[kstr->midi_len + 8];
@@ -229,9 +245,7 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   memcpy(request_sysex + 7, kstr->midi_bytes, kstr->midi_len);
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("write_current_string");
+  get(request_sysex, "write_current_string");
 }
 
 void Kronos::write_current_slot_name(KString *kstr) {
@@ -242,7 +256,10 @@ void Kronos::write_current_slot_comments(KString *kstr) {
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
-void Kronos::write_current_set_list(SetList &set_list) {
+void Kronos::write_set_list(int n, SetList &set_list) {
+  set_mode(mode_set_list);
+  goto_set_list(n);
+
   MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
 
   byte request_sysex[midi_data.midi_len + 8];
@@ -256,10 +273,10 @@ void Kronos::write_current_set_list(SetList &set_list) {
   memcpy(request_sysex + 7, midi_data.midi_bytes, midi_data.midi_len);
   request_sysex[7 + midi_data.midi_len] = EOX;  // end of sysex
 
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("write_current_set_list");
+  get(request_sysex, "write_current_set_list");
 }
+
+// ================ saving objects to non-volatile storage ================
 
 void Kronos::save_current_set_list() {
   byte request_sysex[8];
@@ -270,17 +287,10 @@ void Kronos::save_current_set_list() {
     static_cast<byte>(OBJ_TYPE_SET_LIST), 0,
     EOX
   };
-
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("save_current_set_list");
+  get(request_sysex, "save_current_set_list");
 }
 
-void Kronos::goto_set_list(byte n) {
-  send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_MSB, 0);
-  send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_LSB, n);
-  send_channel_message(PROGRAM_CHANGE + channel, 0, 0);
-}
+// ================ mode and movement commands ================
 
 KronosMode Kronos::mode() {
   const byte request_sysex[] = {
@@ -288,12 +298,7 @@ KronosMode Kronos::mode() {
     static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
     FUNC_CODE_MODE_REQ, EOX
   };
-
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("mode");
-
-  dump_sysex("mode reply");     // DEBUG
+  get(request_sysex, "mode");
   return (KronosMode)(sysex[5] & 0x0f);
 }
 
@@ -303,18 +308,16 @@ void Kronos::set_mode(KronosMode mode) {
     static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
     FUNC_CODE_MODE_CHANGE, (byte)mode, EOX
   };
-
-  send_sysex(request_sysex);
-  read_sysex();
-  warn_if_error_reply("set_mode");
+  get(request_sysex, "set_mode");
 }
 
-void Kronos::warn_if_error_reply(const char * const func_name) {
-  if (error_reply_seen()) {
-    fprintf(stderr, "Kronos::%s received an error response: %s\n", func_name, error_reply_message());
-    exit(1);
-  }
+void Kronos::goto_set_list(int n) {
+  send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_MSB, 0);
+  send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_LSB, (byte)(n & 0xff));
+  send_channel_message(PROGRAM_CHANGE + channel, 0, 0);
 }
+
+// ================ helpers ================
 
 void Kronos::dump_sysex(const char * const msg) {
   dump_hex(sysex.data(), sysex.size(), msg);
