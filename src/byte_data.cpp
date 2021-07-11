@@ -27,7 +27,8 @@ void ByteData::append(byte b) {
 
 void ByteData::append(byte *b, int len) {
   if (length + len >= allocated_size) {
-    allocated_size += allocated_size;
+    while (allocated_size < length + len)
+      allocated_size += allocated_size;
     bytes = (byte *)realloc(bytes, allocated_size);
   }
   memcpy(bytes + length, b, len);
