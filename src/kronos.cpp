@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "consts.h"
 #include "kronos.h"
 #include "midi_data.h"
@@ -96,6 +97,7 @@ void Kronos::read_sysex() {
   PmEvent buf[SYSEX_BUF_EVENTS];
   ByteData raw_bytes;
   SysexState state;
+  time_t start = time(0);
 
   state = waiting;
   while (state != received && state != error) {
@@ -111,6 +113,10 @@ void Kronos::read_sysex() {
             state = received;
         }
       }
+    }
+    else if ((time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
+      fprintf(stderr, "timeout waiting for sysex\n");
+      exit(1);
     }
   }
 
