@@ -97,12 +97,17 @@ void SetListFile::table_end() {
 
 // ================ reading ================
 
-// returns false on EOF
+// Reads next line from file, strips ending newline, and returns false on
+// EOF else true.
 bool SetListFile::getline() {
   char buf[BUFSIZ];
 
   if (fgets(buf, BUFSIZ, _fp) == 0)
     return false;
+  int len = strlen(buf);
+  if (buf[len-1] == '\n')
+    buf[len-1] = '\0';
+
   _line = buf;
   return true;
 }
