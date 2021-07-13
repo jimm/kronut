@@ -40,7 +40,7 @@ void dump_hex(byte *bytes, size_t size, const char * const msg) {
     }
     printf(" ");
     for (int i = 0; i < chunk_len; ++i) {
-      printf("%c", (bytes[i] >= 32 && bytes[i] <= 127) ? bytes[i] : '.');
+      printf("%c", (bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
     }
     puts("");
     bytes += chunk_len;
