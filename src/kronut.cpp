@@ -26,7 +26,7 @@ struct opts {
 int find_kronos_input_num() {
   for (int i = 0; i < Pm_CountDevices(); ++i) {
     const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->input == 1 && strncmp("KRONOS KEYBOARD", info->name, 15) == 0)
+    if (info->input == 1 && strncasecmp("kronos keyboard", info->name, 15) == 0)
       return i;
   }
   return -1;
@@ -35,7 +35,7 @@ int find_kronos_input_num() {
 int find_kronos_output_num() {
   for (int i = 0; i < Pm_CountDevices(); ++i) {
     const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->output == 1 && strncmp("KRONOS SOUND", info->name, 12) == 0)
+    if (info->output == 1 && strncasecmp("kronos sound", info->name, 12) == 0)
       return i;
   }
   return -1;
