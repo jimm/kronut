@@ -10,6 +10,7 @@
 #include "set_list.h"
 #include "utils.h"
 
+#define SYSEX_HEADER SYSEX, KORG_MANUFACTURER_ID, static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID
 #define MIDI_BUFSIZ 1024
 #define SYSEX_BUF_EVENTS 1024
 
@@ -194,8 +195,7 @@ const char * const Kronos::error_reply_message() {
 // Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
@@ -222,8 +222,7 @@ void Kronos::read_set_list(int n, SetList &set_list) {
   goto_set_list(n);
 
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
@@ -242,8 +241,7 @@ void Kronos::read_set_list(int n, SetList &set_list) {
 void Kronos::write_current_string(int obj_type, KString *kstr) {
   byte request_sysex[kstr->midi_len + 8];
   const byte request_sysex_header[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(obj_type), 0
   };
 
@@ -268,31 +266,35 @@ void Kronos::write_set_list(int n, SetList &set_list) {
 
   MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
 
-  byte request_sysex[midi_data.midi_len + 8];
   const byte request_sysex_header[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
-    FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(OBJ_TYPE_SET_LIST), 0
+    SYSEX_HEADER,
+    FUNC_CODE_OBJ_DUMP, static_cast<byte>(OBJ_TYPE_SET_LIST),
+    (byte)0,                                   // bank
+    (byte)((n >> 7) & 0x7f), (byte)(n & 0x7f), // idH, idL
+    0                                          // version
   };
+  size_t header_size = sizeof(request_sysex_header);
+  byte request_sysex[header_size + midi_data.midi_len + 1];
 
-  memcpy(request_sysex, request_sysex_header, 7); // start of sysex
-  memcpy(request_sysex + 7, midi_data.midi_bytes, midi_data.midi_len);
-  request_sysex[7 + midi_data.midi_len] = EOX;  // end of sysex
+  memcpy(request_sysex, request_sysex_header, header_size); // header
+  memcpy(request_sysex + header_size, midi_data.midi_bytes, midi_data.midi_len); // data
+  request_sysex[header_size + midi_data.midi_len] = EOX; // end of sysex
 
   get(request_sysex, "write_current_set_list");
+
+  save_current_set_list();
 }
 
 // ================ saving objects to non-volatile storage ================
 
 void Kronos::save_current_set_list() {
-  byte request_sysex[8];
-  const byte request_sysex_header[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+  const byte request_sysex[] = {
+    SYSEX_HEADER,
     FUNC_CODE_STORE_BANK_REQ,
     static_cast<byte>(OBJ_TYPE_SET_LIST), 0,
     EOX
   };
+
   get(request_sysex, "save_current_set_list");
 }
 
@@ -300,8 +302,7 @@ void Kronos::save_current_set_list() {
 
 KronosMode Kronos::mode() {
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    SYSEX_HEADER,
     FUNC_CODE_MODE_REQ, EOX
   };
   get(request_sysex, "mode");
@@ -310,8 +311,7 @@ KronosMode Kronos::mode() {
 
 void Kronos::set_mode(KronosMode mode) {
   const byte request_sysex[] = {
-    SYSEX, KORG_MANUFACTURER_ID,
-    static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID,
+    SYSEX_HEADER,
     FUNC_CODE_MODE_CHANGE, (byte)mode, EOX
   };
   get(request_sysex, "set_mode");

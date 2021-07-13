@@ -144,7 +144,6 @@ void list_all_devices() {
 int main(int argc, char * const *argv) {
   struct opts opts;
   const char *prog_name = argv[0];
-  char *path;
 
   parse_command_line(argc, argv, opts);
   argc -= optind;
@@ -178,29 +177,19 @@ int main(int argc, char * const *argv) {
   int status = 0;
   char command = argv[0][0];
   int set_list_num = atoi(argv[1]);
+  char *path = argv[2];
   Kronos kronos(opts.channel, opts.input_num, opts.output_num);
   init_midi();
   Editor editor(opts.format);
 
   switch (command) {
   case 'l':
-    if (editor.load_set_list_from_file(argv[1]) == 0) {
+    if (editor.load_set_list_from_file(path) == 0)
       kronos.write_set_list(set_list_num, editor.set_list());
-
-      // FIXME I don't know why this doesn't save the set list on the
-      // Kronos. Instead, it erases/resets it. The docs in
-      // KRONOS_MIDI_SysEx.txt say that sending the set list via the Object
-      // Dump message then calling Store Bank Request should work. I'm
-      // sending a Current Object Dump, maybe that's it.
-      //
-      // Also, for some reason the reply doesn't come from the Kronos.
-
-      // kronos.save_current_set_list();
-    }
     break;
   case 's':
     kronos.read_set_list(set_list_num, editor.set_list());
-    editor.save_set_list_to_file(argv[1]);
+    editor.save_set_list_to_file(path);
     break;
   default:
     usage(prog_name);
