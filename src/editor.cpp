@@ -1,3 +1,6 @@
+#include <iostream>
+#include <iomanip>
+#include <strstream>
 #include <string.h>
 #include <ctype.h>
 #include <libgen.h>
@@ -23,9 +26,8 @@ int Editor::load_set_list_from_file(char *path) {
   string name;
   string comments;
 
-  if (_file->open(path, "r") == nullptr) {
-    fprintf(stderr, "error: can't open \"%s\" for reading: %s\n",
-            path, strerror(errno));
+  if (!_file->open(path, "r")) {
+    cerr << "error: can't open \"" << path << "\" for reading: " << strerror(errno) << endl;
     return errno;
   }
 
@@ -37,7 +39,7 @@ int Editor::load_set_list_from_file(char *path) {
       // Set List name
       name = _file->header_text(1);
       if (slw.set_name(name) != 0)
-        fprintf(stderr, "warning: set list name \"%s\" is too long and will be truncated", name.c_str());
+        cerr << "warning: set list name \"" << name << "\" is too long and will be truncated" << endl;
 
       _file->skip_blank_lines();
       load_set_list_settings_from_file(slw);
@@ -54,13 +56,17 @@ int Editor::load_set_list_from_file(char *path) {
       Slot &slot = _set_list.slots[slot_number];
       SlotWrapper sw(slot);
       if (sw.set_name(name) != 0)
-        fprintf(stderr, "warning: slot %03d name \"%s\" is too long and will be truncated",
-                slot_number, name.c_str());
+        cerr << "warning: slot " << setw(3) << setfill('0') << slot_number
+             << " named \"" << name << "\" is too long and will be truncated"
+             << endl;
 
       string trimmed_comments = trimmed(comments);
       if (sw.set_comments(trimmed_comments) != 0)
-        fprintf(stderr, "warning: slot %03d comments \"%s...\" are too long and will be truncated",
-                slot_number, comments.substr(0, 20).c_str());
+        cerr << "warning: slot " << setw(3) << setfill('0') << slot_number
+             << " named \"" << name
+             << "\" comments \""
+             << comments.substr(0, 20) << "...\" are too long and will be truncated"
+             << endl;
 
       load_set_list_slot_settings_from_file(sw);
 
@@ -141,9 +147,8 @@ int Editor::save_set_list_to_file(char *path) {
   char buf[BUFSIZ];
   SetListWrapper slw(_set_list);
 
-  if (_file->open(path, "w") == nullptr) {
-    fprintf(stderr, "error: can't open \"%s\" for writing: %s\n",
-            path, strerror(errno));
+  if (!_file->open(path, "w")) {
+    cerr << "error: can't open \"" << path << "\" for writing: " << strerror(errno) << endl;
     return errno;
   }
 
@@ -168,16 +173,16 @@ int Editor::save_set_list_to_file(char *path) {
 }
 
 void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
-  char buf[BUFSIZ];
+  ostrstream ostr;
 
   _file->table_headers("Setting", "Value");
   _file->table_row("Slots/Page", slw.slots_per_page());
   _file->table_row("EQ Bypass", _set_list.eq_bypass);
-  sprintf(buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d", _set_list.band_levels[0],
-          _set_list.band_levels[1], _set_list.band_levels[2], _set_list.band_levels[3],
-          _set_list.band_levels[4], _set_list.band_levels[5], _set_list.band_levels[6],
-          _set_list.band_levels[7], _set_list.band_levels[8]);
-  _file->table_row("Band Levels", buf);
+  for (int i = 0 ; i < 9; ++i) {
+    if (i > 0) ostr << ',';
+    ostr << (int)_set_list.band_levels[i];
+  }
+  _file->table_row("Band Levels", ostr.str());
   _file->table_row("Surface Mode", _set_list.control_surface_mode);
   _file->table_row("Surface Asgn", _set_list.control_surface_assign_from);
   _file->table_end();

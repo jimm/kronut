@@ -1,6 +1,9 @@
-#include <stdio.h>
+#include <iostream>
+#include <iomanip>
 #include <string.h>
 #include "utils.h"
+
+using namespace std;
 
 static char c_str_buf[1024];
 
@@ -19,30 +22,27 @@ char * c_str(char *p, size_t len) {
 }
 
 void dump_hex(byte *bytes, size_t size, const char * const msg) {
-  printf("%s\n", msg);
+  cout << msg << endl;
   if (bytes == 0) {
-    puts("<null>");
+    cout << "<null>" << endl;
     return;
   }
   if (size == 0) {
-    puts("<empty>");
+    cout << "<empty>" << endl;
     return;
   }
   size_t offset = 0;
   while (size > 0) {
     int chunk_len = 8 > size ? size : 8;
-    printf("%08lx:", offset);
-    for (int i = 0; i < chunk_len; ++i) {
-      printf(" %02x", bytes[i]);
-    }
-    for (int i = chunk_len; i < 8; ++i) {
-      printf("   ");
-    }
-    printf(" ");
-    for (int i = 0; i < chunk_len; ++i) {
-      printf("%c", (bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
-    }
-    puts("");
+    cout << setw(8) << setfill('0') << offset;
+    for (int i = 0; i < chunk_len; ++i)
+      cout << setw(2) << setfill('0') << bytes[i];
+    for (int i = chunk_len; i < 8; ++i)
+      cout << "   ";
+    cout << ' ';
+    for (int i = 0; i < chunk_len; ++i)
+      cout << (char)((bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
+    cout << endl;
     bytes += chunk_len;
     size -= chunk_len;
     offset += chunk_len;

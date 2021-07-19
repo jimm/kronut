@@ -59,7 +59,7 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
   if (input_device_num >= 0) {  // negative means we're testing
     PmError err = Pm_OpenInput(&input, input_device_num, 0, MIDI_BUFSIZ, 0, 0);
     if (err != 0) {
-      fprintf(stderr, "error opening PortMidi input stream: %s\n", Pm_GetErrorText(err));
+      cerr << "error opening PortMidi input stream: " << Pm_GetErrorText(err) << endl;
       exit(1);
     }
   }
@@ -67,7 +67,7 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
   if (output_device_num >= 0) {
     PmError err = Pm_OpenOutput(&output, output_device_num, 0, MIDI_BUFSIZ, 0, 0, 0);
     if (err != 0) {
-      fprintf(stderr, "error opening PortMidi output stream: %s\n", Pm_GetErrorText(err));
+      cerr << "error opening PortMidi output stream: " << Pm_GetErrorText(err) << endl;
       exit(1);
     }
   }
@@ -85,7 +85,7 @@ Kronos::~Kronos() {
 void Kronos::send_sysex(const byte * const sysex_bytes) {
   PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
   if (err != 0) {
-    fprintf(stderr, "error writing sysex: %s\n", Pm_GetErrorText(err));
+    cerr << "error writing sysex: " << Pm_GetErrorText(err) << endl;
     exit(1);
   }
 }
@@ -116,7 +116,7 @@ void Kronos::read_sysex() {
       }
     }
     else if ((time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
-      fprintf(stderr, "timeout waiting for sysex\n");
+      cerr << "timeout waiting for sysex" << endl;
       exit(1);
     }
   }
@@ -149,7 +149,7 @@ void Kronos::get(const byte * const request_sysex, const char * const func_name)
   send_sysex(request_sysex);
   read_sysex();
   if (error_reply_seen()) {
-    fprintf(stderr, "Kronos::%s received an error response: %s\n", func_name, error_reply_message());
+    cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << endl;
     exit(1);
   }
 }
@@ -157,7 +157,7 @@ void Kronos::get(const byte * const request_sysex, const char * const func_name)
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
   PmError err = Pm_WriteShort(output, 0, Pm_Message(status, data1, data2));
   if (err != 0) {
-    fprintf(stderr, "error writing channel message: %s\n", Pm_GetErrorText(err));
+    cerr << "error writing channel message: " << Pm_GetErrorText(err) << endl;
     exit(1);
   }
 }

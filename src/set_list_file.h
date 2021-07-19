@@ -1,7 +1,7 @@
 #ifndef EDIT_FILE_H
 #define EDIT_FILE_H
 
-#include <stdio.h>
+#include <fstream>
 #include <string>
 #include "kstring.h"
 
@@ -11,7 +11,7 @@ class SetListFile {
 public:
   SetListFile(char header_char, char table_sep_sep_char);
 
-  FILE *open(const char * const path, const char *mode);
+  bool open(const char * const path, const char *mode);
   void close();
 
   // writing
@@ -49,7 +49,8 @@ public:
   string table_col2();
 
 protected:
-  FILE *_fp;
+  ifstream _in;
+  ofstream _out;
   string _line;
   char _header_char;
   char _table_sep_sep_char;

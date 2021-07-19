@@ -1,6 +1,7 @@
+#include <iostream>
+#include <iomanip>
 #include <getopt.h>
 #include <ctype.h>
-#include <iostream>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,8 +9,6 @@
 #include "slot.h"
 #include "kronos.h"
 #include "editor.h"
-
-#define SET_LIST_UNDEFINED (-1)
 
 using namespace std;
 
@@ -47,7 +46,7 @@ void close_midi() {
 void init_midi() {
   PmError err = Pm_Initialize();
   if (err != 0) {
-    fprintf(stderr, "error initializing PortMidi: %s\n", Pm_GetErrorText(err));
+    cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << endl;
     exit(1);
   }
 
@@ -96,7 +95,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
       if (opts.channel < 0 || opts.channel > 15) {
-        fprintf(stderr, "error: channel must be 1-16\n");
+        cerr << "error: channel must be 1-16" << endl;
         usage(prog_name);
         exit(1);
       }
@@ -118,13 +117,13 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
 }
 
 void list_devices(const char * const type_name, bool show_inputs) {
-  printf("%s:\n", type_name);
+  cout << type_name << ':' << endl;
   for (int i = 0; i < Pm_CountDevices(); ++i) {
     const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
     if (show_inputs ? (info->input == 1) : (info->output == 1)) {
       const char *name = info->name;
       const char *q = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
-      printf("  %2d: %s%s%s\n", i, q, name, q);
+      cout << "  " << setw(2) << i << ": " << q << name << q << endl;
     }
   }
 }
@@ -160,12 +159,12 @@ int main(int argc, char * const *argv) {
   if (opts.input_num == -1)
     opts.input_num = find_kronos_input_num();
   if (opts.input_num == -1)
-    fprintf(stderr, "error: can't find Kronos input port number\n");
+    cerr << "error: can't find Kronos input port number" << endl;
 
   if (opts.output_num == -1)
     opts.output_num = find_kronos_output_num();
   if (opts.output_num == -1)
-    fprintf(stderr, "error: can't find Kronos output port number\n");
+    cerr << "error: can't find Kronos output port number" << endl;
 
   if (opts.input_num == -1 || opts.output_num == -1) {
     usage(prog_name);
