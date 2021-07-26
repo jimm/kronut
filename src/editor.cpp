@@ -33,6 +33,13 @@ int Editor::load_set_list_from_file(char *path) {
 
   // in case we get fewer than 128 slots
   memset((void *)&_set_list, 0, sizeof(SetList));
+  for (int i = 0; i < 128; ++i) {
+    Slot &slot = _set_list.slots[i];
+    SlotWrapper sw(slot);
+    sw.set_performance_type(pt_program);
+    sw.set_volume(127);
+    sw.set_hold_time(6);
+  }
 
   while (_file->getline()) {
     if (_file->is_header(1)) {
