@@ -13,8 +13,8 @@ typedef unsigned char byte;
 // Font takes bits
 
 enum SlotPerformanceType {
-  pt_program = 0,
-  pt_combination,
+  pt_combination = 0,
+  pt_program,
   pt_song
 };
 

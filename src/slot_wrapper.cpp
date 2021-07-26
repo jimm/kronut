@@ -4,8 +4,8 @@
 #include "slot_wrapper.h"
 
 const char * const SLOT_PERF_TYPE_NAMES[3] = {
-  "Program",
   "Combination",
+  "Program",
   "Song"
 };
 
