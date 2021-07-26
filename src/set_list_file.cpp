@@ -40,7 +40,7 @@ void SetListFile::header(int level, char *text) {
 void SetListFile::header(int level, string str) {
   for (int i = 0; i < level; ++i)
     _out << _header_char;
-  _out << str << endl << endl;
+  _out << ' ' << str << endl << endl;
 }
 
 
@@ -94,9 +94,16 @@ void SetListFile::table_row(const char * const col1, const char * const col2) {
       << " |" << endl;
 }
 
+void SetListFile::table_row(const char * const col1, const string &col2) {
+  fprintf(stderr, "col1 %s, col2 %s\n", col1, col2.c_str()); // DEBUG
+  _out << "| " << setw(COL1_DATA_WIDTH) << col1
+      << " | " << setw(COL2_DATA_WIDTH) << col2
+      << " |" << endl;
+}
+
 void SetListFile::table_row(const char * const col1, int value) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
-      << " | " << value
+      << " | " << setw(COL2_DATA_WIDTH) << value
       << " |" << endl;
 }
 

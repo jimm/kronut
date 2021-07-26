@@ -28,8 +28,9 @@ public:
 
   void table_separator();
   void table_headers(const char * const h1, const char * const h2);
-  void table_row(const char * const h1, const char * const h2);
-  void table_row(const char * const h1, const int value);
+  void table_row(const char * const col1, const char * const col2);
+  void table_row(const char * const col1, const string &col2);
+  void table_row(const char * const col1, const int value);
   void table_end();
 
   // reading
