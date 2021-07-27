@@ -19,7 +19,7 @@ Editor::Editor(int format)
     _file = new MarkdownSetListFile();
 }
 
-int Editor::load_set_list_from_file(char *path) {
+int Editor::load_set_list_from_file(const char * const path) {
   SetListWrapper slw(_set_list);
   int slot_number = 0;
   bool collect_comments = false;
@@ -31,21 +31,13 @@ int Editor::load_set_list_from_file(char *path) {
     return errno;
   }
 
-  // in case we get fewer than 128 slots
-  memset((void *)&_set_list, 0, sizeof(SetList));
-  for (int i = 0; i < 128; ++i) {
-    Slot &slot = _set_list.slots[i];
-    SlotWrapper sw(slot);
-    sw.set_performance_type(pt_program);
-    sw.set_volume(127);
-    sw.set_hold_time(6);
-  }
+  init_set_list();
 
   while (_file->getline()) {
     if (_file->is_header(1)) {
       // Set List name
       name = _file->header_text(1);
-      if (slw.set_name(name) != 0)
+      if (slw.set_name(trimmed(name)) != 0)
         cerr << "warning: set list name \"" << name << "\" is too long and will be truncated" << endl;
 
       _file->skip_blank_lines();
@@ -62,7 +54,7 @@ int Editor::load_set_list_from_file(char *path) {
 
       Slot &slot = _set_list.slots[slot_number];
       SlotWrapper sw(slot);
-      if (sw.set_name(name) != 0)
+      if (sw.set_name(trimmed(name)) != 0)
         cerr << "warning: slot " << setw(3) << setfill('0') << slot_number
              << " named \"" << name << "\" is too long and will be truncated"
              << endl;
@@ -72,7 +64,7 @@ int Editor::load_set_list_from_file(char *path) {
         cerr << "warning: slot " << setw(3) << setfill('0') << slot_number
              << " named \"" << name
              << "\" comments \""
-             << comments.substr(0, 20) << "...\" are too long and will be truncated"
+             << trimmed_comments.substr(0, 20) << "...\" are too long and will be truncated"
              << endl;
 
       load_set_list_slot_settings_from_file(sw);
@@ -89,7 +81,6 @@ int Editor::load_set_list_from_file(char *path) {
     }
   }
   _file->close();
-
   return 0;
 }
 
@@ -146,11 +137,9 @@ void Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
       sw.set_keyboard_track(atoi(value.c_str()));
     _file->getline();
   }
-
-  _file->getline();
 }
 
-int Editor::save_set_list_to_file(char *path) {
+int Editor::save_set_list_to_file(const char * const path) {
   char buf[BUFSIZ];
   SetListWrapper slw(_set_list);
 
@@ -216,4 +205,21 @@ string Editor::trimmed(string s) {
   for (char *q = p + strlen(p) -1; q >= p && isspace(*q); --q)
     *q = 0;
   return string(p);
+}
+
+void Editor::init_set_list() {
+  SetListWrapper slw(_set_list);
+
+  memset((void *)&_set_list, 0, sizeof(SetList));
+  slw.set_name("Empty Set List");
+  slw.set_slots_per_page(16);
+  _set_list.eq_bypass = 1;
+  _set_list.control_surface_mode = 5;
+  for (int i = 0; i < 128; ++i) {
+    Slot &slot = _set_list.slots[i];
+    SlotWrapper sw(slot);
+    sw.set_performance_type(pt_program);
+    sw.set_volume(127);
+    sw.set_hold_time(6);
+  }
 }

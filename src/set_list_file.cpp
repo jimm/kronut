@@ -119,6 +119,7 @@ bool SetListFile::getline() {
   char buf[BUFSIZ];
 
   _in.getline(buf, BUFSIZ);
+  _line = buf;
   return !_in.eof();
 }
 

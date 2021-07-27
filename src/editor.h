@@ -19,8 +19,8 @@ class Editor {
 public:
   Editor(int format);
 
-  int load_set_list_from_file(char *path);
-  int save_set_list_to_file(char *path);
+  int load_set_list_from_file(const char * const path);
+  int save_set_list_to_file(const char * const path);
 
   SetList &set_list() { return _set_list; }
 
@@ -36,6 +36,7 @@ protected:
   void load_set_list_slot_settings_from_file(SlotWrapper &sw);
 
   string trimmed(string s);
+  void init_set_list();
 };
 
 #endif /* EDITOR_H */
