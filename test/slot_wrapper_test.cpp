@@ -245,6 +245,12 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
   }
 
   SECTION("performance name saving") {
+    sw.set_performance_name("Combination INT-E 023");
+    REQUIRE(sw.performance_type() == pt_combination);
+    REQUIRE(sw.performance_bank() == 0x04);
+    REQUIRE(sw.performance_index() == 23);
+    REQUIRE(sw.performance_name() == "Combination INT-E 023");
+
     // test case-insensitivity and prefix for type
     sw.set_performance_name("prog int-e 123");
     REQUIRE(sw.performance_type() == pt_program);
