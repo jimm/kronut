@@ -99,26 +99,39 @@ void Kronos::read_sysex() {
   ByteData raw_bytes;
   SysexState state;
   time_t start = time(0);
+  PmError err;
 
   state = waiting;
   while (state != received && state != error) {
     if (Pm_Poll(input) == TRUE) {
       int n = Pm_Read(input, buf, SYSEX_BUF_EVENTS);
+      if (n < 0) {
+        err = (PmError)n;
+        state = error;
+        break;
+      }
       for (int i = 0; i < n; ++i) {
         PmMessage msg = buf[i].message;
         for (int j = 0; j < 4; ++j) {
           byte b = msg & 0xff;
           msg >>= 8;
           raw_bytes.append(b);
-          if (b == EOX)
+          if (b == SYSEX)
+            state = receiving;
+          else if (b == EOX)
             state = received;
         }
       }
     }
-    else if ((time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
+    else if (state == waiting && (time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
       cerr << "timeout waiting for sysex" << endl;
       exit(1);
     }
+  }
+
+  if (state == error) {
+    cerr << "error receiving sysex: " << Pm_GetErrorText(err) << endl;
+    return;
   }
 
   // Filter out realtime bytes and bytes before and after sysex bytes.
