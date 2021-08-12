@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include "catch.hpp"
 #include "test_helper.h"
+#include "mock_kronos.h"
 #include "../src/editor.h"
 #include "../src/set_list_file.h"
-#include "../src/mock_kronos.h"
 
 #define CATCH_CATEGORY "[editor]"
 #define SAVE_FILE "/tmp/kronut_editor.md"

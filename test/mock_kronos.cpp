@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "consts.h"
 #include "mock_kronos.h"
-#include "midi_data.h"
-#include "kstring.h"
-#include "set_list.h"
-#include "utils.h"
+#include "../src/consts.h"
+#include "../src/midi_data.h"
+#include "../src/kstring.h"
+#include "../src/set_list.h"
+#include "../src/utils.h"
 
 #define MOCK_BANK 2
 #define MOCK_PROG 12

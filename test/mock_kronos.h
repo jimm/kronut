@@ -2,7 +2,7 @@
 #define MOCK_KRONOS_H
 
 #include <string>
-#include "kronos.h"
+#include "../src/kronos.h"
 
 using namespace std;
 
