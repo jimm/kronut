@@ -61,7 +61,6 @@ void usage(const char *prog_name) {
        << endl
        << "    -c, --channel N   Kronos general MIDI channel (1-16, default 1)" << endl
        << "    -f, --format FMT  Format: \"o\" (Org Mode, default) or \"m\" (Markdown)" << endl
-       << "    -h, --help        This help" << endl
        << "    -i, --input N     Input number (default: attempts to find it automatically)" << endl
        << "    -o, --output N    Output number (default: attempts to find it automatically)" << endl
        << endl
@@ -73,7 +72,9 @@ void usage(const char *prog_name) {
        << "                 Remember: kronut does not save the set list; you" << endl
        << "                 must do that yourself on the Kronos." << endl
        << endl
-       << "    save N FILE  Saves set list N into a file." << endl;
+       << "    save N FILE  Saves set list N into a file." << endl
+       << endl
+       << "    help         This help." << endl;
 }
 
 void parse_command_line(int argc, char * const *argv, struct opts &opts) {
