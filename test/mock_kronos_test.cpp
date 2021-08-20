@@ -1,7 +1,7 @@
 #include <string.h>
 #include "catch.hpp"
 #include "test_helper.h"
-#include "../src/mock_kronos.h"
+#include "mock_kronos.h"
 
 #define CATCH_CATEGORY "[mock-kronos]"
 
