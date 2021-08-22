@@ -232,16 +232,21 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
     sw.set_performance_type(pt_combination);
     sw.set_performance_bank(0x12);
     sw.set_performance_index(3);
-    REQUIRE(sw.performance_name() == "Combination USER-B 003");
+    REQUIRE(sw.performance_name() == "Combi USER-B 003");
 
     sw.set_performance_bank(0x19);
-    REQUIRE(sw.performance_name() == "Combination USER-BB 003");
+    REQUIRE(sw.performance_name() == "Combi USER-BB 003");
 
     sw.set_performance_bank(0x07);
-    REQUIRE(sw.performance_name() == "Combination g(1) 004"); // nums +1
+    REQUIRE(sw.performance_name() == "Combi g(1) 004"); // nums +1
 
     sw.set_performance_bank(0x06);
-    REQUIRE(sw.performance_name() == "Combination GM 004"); // nums +1
+    REQUIRE(sw.performance_name() == "Combi GM 004"); // nums +1
+
+    sw.set_performance_type(pt_program);
+    sw.set_performance_bank(0x12);
+    sw.set_performance_index(3);
+    REQUIRE(sw.performance_name() == "Prog USER-B 003");
   }
 
   SECTION("performance name saving") {
@@ -249,19 +254,19 @@ TEST_CASE("accessors", CATCH_CATEGORY) {
     REQUIRE(sw.performance_type() == pt_combination);
     REQUIRE(sw.performance_bank() == 0x04);
     REQUIRE(sw.performance_index() == 23);
-    REQUIRE(sw.performance_name() == "Combination INT-E 023");
+    REQUIRE(sw.performance_name() == "Combi INT-E 023");
 
     // test case-insensitivity and prefix for type
     sw.set_performance_name("prog int-e 123");
     REQUIRE(sw.performance_type() == pt_program);
     REQUIRE(sw.performance_bank() == 0x04);
     REQUIRE(sw.performance_index() == 123);
-    REQUIRE(sw.performance_name() == "Program INT-E 123");
+    REQUIRE(sw.performance_name() == "Prog INT-E 123");
 
-    sw.set_performance_name("Combination GM 1");
+    sw.set_performance_name("Combi GM 1");
     REQUIRE(sw.performance_type() == pt_combination);
     REQUIRE(sw.performance_bank() == 0x06);
     REQUIRE(sw.performance_index() == 0); // GM and a few others offset by 1
-    REQUIRE(sw.performance_name() == "Combination GM 001");
+    REQUIRE(sw.performance_name() == "Combi GM 001");
   }
 }

@@ -3,7 +3,7 @@
 #include "set_list_file.h"
 
 #define COL1_DATA_WIDTH 12
-#define COL2_DATA_WIDTH 24
+#define COL2_DATA_WIDTH 18
 
 SetListFile::SetListFile(char header_char, char table_sep_sep_char)
   : _header_char(header_char), _table_sep_sep_char(table_sep_sep_char)

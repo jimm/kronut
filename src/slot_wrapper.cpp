@@ -9,6 +9,12 @@ const char * const SLOT_PERF_TYPE_NAMES[3] = {
   "Song"
 };
 
+const char * const SLOT_PERF_TYPE_NAMES_ABBREV[3] = {
+  "Combi",
+  "Prog",
+  "Song"
+};
+
 const char * const SLOT_COLOR_NAMES[16] = {
   "Default",
   "Charcoal",
@@ -53,13 +59,13 @@ void SlotWrapper::set_performance_type(SlotPerformanceType val) {
   slot.performance_type = (slot.performance_type & 0xfc) + ((int)val & 0x03);
 }
 
-const char * const SlotWrapper::performance_type_name() {
+const char * const SlotWrapper::performance_type_name(bool abbreviated) {
   int index = (int)performance_type();
   if (index < 0 || index >= (sizeof(SLOT_PERF_TYPE_NAMES) / sizeof(const char * const))) {
     cerr << "error: illegal performance type value " << index << endl;
     exit(1);
   }
-  return SLOT_PERF_TYPE_NAMES[(int)performance_type()];
+  return abbreviated ? SLOT_PERF_TYPE_NAMES_ABBREV[index] : SLOT_PERF_TYPE_NAMES[index];
 }
 
 void SlotWrapper::set_performance_bank(byte val) {
@@ -113,13 +119,20 @@ string SlotWrapper::performance_name() {
   if (performance_bank() >= 0x06 && performance_bank() <= 0x10)
     index_offset = 1;
 
-  ostream << performance_type_name() << ' ' << performance_bank_name() << ' '
+  ostream << performance_type_name(true) << ' ' << performance_bank_name() << ' '
           << std::setfill('0') << std::setw(3) << (performance_index() + index_offset)
           << std::ends;
   return ostream.str();
 }
 
-// Parses str and sets performance type, bank, and index.
+// Parses str and sets performance type, bank, and index. Everything is case
+// insensitive.
+//
+// Accepts any prefix of performance type names (combi, prog, song). Only
+// the first letter is checked.
+//
+// Bank names must match "INT-[A-F]", "GM", "g\([1-9d]\)", or
+// "USER-[A-G]{1,2}".
 void SlotWrapper::set_performance_name(string str) {
   for (int i = 0; i < 3; ++i) {
     if (strncasecmp(str.c_str(), SLOT_PERF_TYPE_NAMES[i], 1) == 0) {

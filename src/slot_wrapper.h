@@ -61,7 +61,7 @@ public:
 
   SlotPerformanceType performance_type();
   void set_performance_type(SlotPerformanceType val);
-  const char * const performance_type_name();
+  const char * const performance_type_name(bool abbreviated);
 
   byte performance_bank();
   string performance_bank_name();
