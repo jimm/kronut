@@ -90,21 +90,21 @@ void SetListFile::table_headers(const char * const h1, const char * const h2) {
 
 void SetListFile::table_row(const char * const col1, const char * const col2) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
-      << " | " << setw(COL2_DATA_WIDTH) << col2
-      << " |" << endl;
+       << " | " << setw(COL2_DATA_WIDTH) << left << col2
+       << " |" << endl;
 }
 
 void SetListFile::table_row(const char * const col1, const string &col2) {
   fprintf(stderr, "col1 %s, col2 %s\n", col1, col2.c_str()); // DEBUG
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
-      << " | " << setw(COL2_DATA_WIDTH) << col2
-      << " |" << endl;
+       << " | " << setw(COL2_DATA_WIDTH) << left << col2
+       << " |" << endl;
 }
 
 void SetListFile::table_row(const char * const col1, int value) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
-      << " | " << setw(COL2_DATA_WIDTH) << value
-      << " |" << endl;
+       << " | " << setw(COL2_DATA_WIDTH) << left << value
+       << " |" << endl;
 }
 
 void SetListFile::table_end() {

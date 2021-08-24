@@ -104,7 +104,6 @@ void Kronos::read_sysex() {
   SysexState state;
   time_t start = time(0);
   PmError err;
-  bool logged_bytes_before_sysex = false;
 
   state = waiting;
   clog << "waiting for sysex" << endl;
@@ -133,12 +132,6 @@ void Kronos::read_sysex() {
           else if (b == EOX) {
             state = received;
             clog << "sysex end seen" << endl;
-          }
-
-          if (state == waiting && !logged_bytes_before_sysex) {
-            clog << "dropping data before sysex, first byte dropped "
-                 << setw(2) << setfill('0') << hex << (unsigned int)b << endl;
-            logged_bytes_before_sysex = true;
           }
         }
       }
