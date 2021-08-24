@@ -19,6 +19,7 @@ struct opts {
   int input_num;
   int output_num;
   int format;
+  bool debug;
 } opts;
 
 int find_kronos_input_num() {
@@ -57,7 +58,7 @@ void init_midi() {
 
 void usage(const char *prog_name) {
   cerr << "usage: " << basename((char *)prog_name)
-       << " [-c N] [-i N] [-o N] []f FORMAT] [-h] COMMAND [args]" << endl
+       << " [-c N] [-i N] [-o N] [-f FORMAT] [-d] [-h] COMMAND [args]" << endl
        << endl
        << "    -c, --channel N   Kronos general MIDI channel (1-16, default 1)" << endl
        << "    -f, --format FMT  Format: \"o\" (Org Mode, default) or \"m\" (Markdown)" << endl
@@ -74,6 +75,8 @@ void usage(const char *prog_name) {
        << endl
        << "    save N FILE  Saves set list N into a file." << endl
        << endl
+       << "    debug        Output various debug messages." << endl
+       << endl
        << "    help         This help." << endl;
 }
 
@@ -85,13 +88,15 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {"format", required_argument, 0, 'f'},
     {"input", required_argument, 0, 'i'},
     {"output", required_argument, 0, 'o'},
+    {"debug", no_argument, 0, 'd'},
     {"help", no_argument, 0, 'h'},
     {0, 0, 0, 0}
   };
 
   opts.input_num = opts.output_num = -1;
   opts.format = EDITOR_FORMAT_ORG_MODE;
-  while ((ch = getopt_long(argc, argv, "c:f:i:o:h", longopts, 0)) != -1) {
+  opts.debug = false;
+  while ((ch = getopt_long(argc, argv, "c:f:i:o:dh", longopts, 0)) != -1) {
     switch (ch) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
@@ -109,6 +114,9 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
       break;
     case 'o':
       opts.output_num = atoi(optarg);
+      break;
+    case 'd':
+      opts.debug = true;
       break;
     case 'h': default:
       usage(prog_name);
@@ -154,6 +162,11 @@ int main(int argc, char * const *argv) {
   if (strncmp(argv[0], "li", 2) == 0) {
     list_all_devices();
     exit(0);
+  }
+
+  if (!opts.debug) {
+    // "Turn off" std::clog by pointing it to /dev/null.
+    clog.rdbuf(nullptr);
   }
 
   // Ensure we have input and output device numbers for the Kronos

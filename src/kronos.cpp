@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,7 +15,8 @@
 #define MIDI_BUFSIZ 1024
 #define SYSEX_BUF_EVENTS 1024
 
-#define READ_SYSEX_TIMEOUT_SECS 5
+#define SYSEX_START_TIMEOUT_SECS 5
+#define SYSEX_READ_TIMEOUT_SECS 60
 #define TIMEOUT_ERROR_REPLY 100
 
 #define is_realtime(b) ((b) >= CLOCK)
@@ -83,11 +85,13 @@ Kronos::~Kronos() {
 // ================ sysex I/O ================
 
 void Kronos::send_sysex(const byte * const sysex_bytes) {
+  clog << "sending sysex" << endl;
   PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
   if (err != 0) {
     cerr << "error writing sysex: " << Pm_GetErrorText(err) << endl;
     exit(1);
   }
+  clog << "sysex sent" << endl;
 }
 
 // Wait for next System Exclusive message to be read into `sysex`. We first
@@ -100,8 +104,10 @@ void Kronos::read_sysex() {
   SysexState state;
   time_t start = time(0);
   PmError err;
+  bool logged_bytes_before_sysex = false;
 
   state = waiting;
+  clog << "waiting for sysex" << endl;
   while (state != received && state != error) {
     if (Pm_Poll(input) == TRUE) {
       int n = Pm_Read(input, buf, SYSEX_BUF_EVENTS);
@@ -115,16 +121,34 @@ void Kronos::read_sysex() {
         for (int j = 0; j < 4; ++j) {
           byte b = msg & 0xff;
           msg >>= 8;
+          if (is_realtime(b))
+            continue;
+
           raw_bytes.append(b);
-          if (b == SYSEX)
+          if (b == SYSEX) {
             state = receiving;
-          else if (b == EOX)
+            start = time(0);
+            clog << "sysex start seen" << endl;
+          }
+          else if (b == EOX) {
             state = received;
+            clog << "sysex end seen" << endl;
+          }
+
+          if (state == waiting && !logged_bytes_before_sysex) {
+            clog << "dropping data before sysex, first byte dropped "
+                 << setw(2) << setfill('0') << hex << (unsigned int)b << endl;
+            logged_bytes_before_sysex = true;
+          }
         }
       }
     }
-    else if (state == waiting && (time(0) - start) >= READ_SYSEX_TIMEOUT_SECS) {
+    else if (state == waiting && (time(0) - start) >= SYSEX_START_TIMEOUT_SECS) {
       cerr << "timeout waiting for sysex" << endl;
+      exit(1);
+    }
+    else if (state == receiving && (time(0) - start) >= SYSEX_READ_TIMEOUT_SECS) {
+      cerr << "timeout waiting for end of sysex" << endl;
       exit(1);
     }
   }
