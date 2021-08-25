@@ -48,3 +48,97 @@ Markdown, use the `--format` command line argument.
 Whenever a slot name or comment you enter too long, it is truncated before
 it is sent to the Kronos. When that happens, Kronut outputs the slot number
 and name and tells you if the name, comment, or both were too long.
+
+# Kronut Files
+
+The files that Kronut reads and writes are text files. Here is the beginning
+of an example set list file that I saved from my Kronos. I prefer Org Mode,
+so that's what you're seeing here.
+
+```
+* Learning These
+
+|--------------+--------------------|
+|      Setting | Value              |
+|--------------+--------------------|
+| Slots/Page   | 16                 |
+| EQ Bypass    | 0                  |
+| Band Levels  | 0,0,0,0,0,0,0,0,0  |
+| Surface Mode | 0                  |
+| Surface Asgn | 0                  |
+|--------------+--------------------|
+
+** Creep
+
+Key: G
+
+G B C Cm | c d eb f
+
+crunches: bar 3: .... .... XX.. .... | ..XX .... .... XXxX
+whole note crunches
+
+top notes
+G F# | E G Eb ^C | B (B)G   F# A | G E  Eb__vC | D fade
+
+piano at end
+
+|--------------+--------------------|
+| Setting      | Value              |
+|--------------+--------------------|
+| Performance  | Combi INT-F 003    |
+| Color        | Default            |
+| Font         | Small              |
+| Transpose    | 0                  |
+| Volume       | 127                |
+| Hold Time    | 6                  |
+| Kbd Track    | 0                  |
+|--------------+--------------------|
+
+** Palestine, TX
+
+Key: Fm
+
+Upright bass: F bend up to Ab, back down
+Fm x8
+bass: f | bb-slide->c c c eb f
+chords on 3s: r r F..F r r F
+
+Abm | Dm | Dm Abm | Fm (in bass, stay on f)
+
+warbly vox, second chorus
+
+Later verse, stabs on
+  XXXX FX..F r r F
+
+|--------------+--------------------|
+| Setting      | Value              |
+|--------------+--------------------|
+| Performance  | Combi INT-F 004    |
+| Color        | Default            |
+| Font         | Small              |
+| Transpose    | 0                  |
+| Volume       | 127                |
+| Hold Time    | 6                  |
+| Kbd Track    | 0                  |
+|--------------+--------------------|
+
+** American Girl
+
+Key: D
+I: g,d,b end 1st (d a) fade in, out
+V: (-) D E G A (2x) + A / D G Emi A 4x
+C: (-) G A D Bmi / G A D D
+...
+```
+
+The first line is a top-level header that contains the set list name, in
+this case "Learning These".
+
+After that is a table containing set list settings like slots per page (4,
+8, or 16) and EQ bypass (0 (EQ off) or 1 (EQ on)).
+
+Next are all of the slots in the set list. Each slot starts with a
+second-level header with the slot's name. Next come the comments, if any.
+Finally, there is a table containing the slot's settings.
+
+That's it.
