@@ -142,3 +142,14 @@ second-level header with the slot's name. Next come the comments, if any.
 Finally, there is a table containing the slot's settings.
 
 That's it.
+
+# To Do
+
+- Find out where slot brightness is stored and expose that value. Or is it
+in the set list?
+
+- Find out where slot MIDI track is. It's only for songs.
+
+- Set list control surface mode: 
+
+- Keyboard track is only for songs; change the label?

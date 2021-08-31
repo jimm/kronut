@@ -7,7 +7,7 @@
 
 static const char * const test_name = "abcdefghijklmnopqrstuvwx";
 
-TEST_CASE("accessors", CATCH_CATEGORY) {
+TEST_CASE("slot wrapper accessors", CATCH_CATEGORY) {
   Slot slot;
   SlotWrapper sw(slot);
 

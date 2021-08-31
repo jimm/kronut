@@ -32,6 +32,7 @@ typedef unsigned char byte;
  *     USER-A - USER-G   = 0x11-0x17
  *     USER-AA - USER-GG = 0x18-1E
  *
+ *
  * performance index
  *  (all bits used (?))
  *

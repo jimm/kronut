@@ -1,4 +1,9 @@
+#include <iostream>
 #include "set_list_wrapper.h"
+
+const char * const CONTROL_SURFACE_ASSIGN_FROM_NAMES[2] = {
+  "Slot", "Set List"
+};
 
 string SetListWrapper::name() {
   return chars_to_string(set_list.name, SET_LIST_NAME_LEN);
@@ -25,4 +30,26 @@ void SetListWrapper::set_slots_per_page(int n) {
     set_list.slots_per_page = 2;
     break;
   }
+}
+
+SetListControlSurfaceAssignFrom SetListWrapper::control_surface_assign_from() {
+  return (SetListControlSurfaceAssignFrom)(set_list.control_surface_assign_from & 0x01);
+}
+
+void SetListWrapper::set_control_surface_assign_from(SetListControlSurfaceAssignFrom val) {
+  set_list.control_surface_assign_from = (int)(val & 0x01);
+}
+
+void SetListWrapper::set_control_surface_assign_from(string str) {
+  SetListControlSurfaceAssignFrom val = (str[1] == 'e' || str[1] == 'E') ? cs_assign_set_list : cs_assign_slot;
+  set_control_surface_assign_from(val);
+}
+
+const char * const SetListWrapper::control_surface_assign_from_name() {
+  int index = (int)control_surface_assign_from();
+  if (index < 0 || index >= (sizeof(CONTROL_SURFACE_ASSIGN_FROM_NAMES) / sizeof(const char * const))) {
+    cerr << "error: illegal control surface assign from value " << index << endl;
+    exit(1);
+  }
+  return CONTROL_SURFACE_ASSIGN_FROM_NAMES[index];
 }

@@ -18,7 +18,7 @@ struct SetList {
   byte eq_bypass;
   byte band_levels[9];
   byte control_surface_mode;
-  byte control_surface_assign_from;
+  byte control_surface_assign_from; // 0 == Slot, 1 == Set List
   byte slots_per_page;          // 0 == 16, 1 == 8, 2 == 4
   byte reserved[3];
 

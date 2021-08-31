@@ -9,6 +9,11 @@ using namespace std;
 
 typedef unsigned char byte;
 
+enum SetListControlSurfaceAssignFrom {
+  cs_assign_slot = 0,
+  cs_assign_set_list
+};
+
 class SetListWrapper : public StructWrapper {
 public:
   SetList &set_list;
@@ -20,6 +25,11 @@ public:
 
   int slots_per_page();
   void set_slots_per_page(int n);
+
+  SetListControlSurfaceAssignFrom control_surface_assign_from();
+  void set_control_surface_assign_from(SetListControlSurfaceAssignFrom val);
+  void set_control_surface_assign_from(string str);
+  const char * const control_surface_assign_from_name();
 };
 
 #endif /* SLOT_WRAPPER_H */

@@ -108,7 +108,7 @@ void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
     else if (setting_name == "Surface Mode")
       _set_list.control_surface_mode = atoi(value.c_str());
     else if (setting_name == "Surface Asgn")
-      _set_list.control_surface_assign_from = atoi(value.c_str());
+      sw.set_control_surface_assign_from(value);
     _file->getline();
   }
 
@@ -180,7 +180,7 @@ void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
   }
   _file->table_row("Band Levels", ostr.str());
   _file->table_row("Surface Mode", _set_list.control_surface_mode);
-  _file->table_row("Surface Asgn", _set_list.control_surface_assign_from);
+  _file->table_row("Surface Asgn", slw.control_surface_assign_from_name());
   _file->table_end();
 }
 
