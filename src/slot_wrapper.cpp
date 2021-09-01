@@ -42,6 +42,18 @@ const char * const SLOT_FONT_SHORT_NAMES[5] = {
   "S", "XS", "M", "L", "XL"
 };
 
+bool SlotWrapper::is_empty() {
+  return name() == ""
+    && performance_type() == pt_program
+    && performance_bank() == 0
+    && performance_index() == 0
+    && hold_time() == 6
+    && volume() == 127
+    && keyboard_track() == 0
+    && comments() == "";
+
+}
+
 string SlotWrapper::name() {
   return chars_to_string(slot.name, SLOT_NAME_LEN);
 }

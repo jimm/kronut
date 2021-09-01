@@ -143,10 +143,13 @@ Finally, there is a table containing the slot's settings.
 
 That's it.
 
-# To Do
+# Random Notes
 
-- Find out where slot brightness is stored and expose that value. Or is it
-in the set list?
+Comment brightness (adjusted from with the full-screen slot comment display)
+is a global setting. It is not stored with the slot or the set list, so
+Kronut can't save it or let you adjust it.
+
+# To Do
 
 - Find out where slot MIDI track is. It's only for songs.
 

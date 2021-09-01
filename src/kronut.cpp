@@ -19,6 +19,7 @@ struct opts {
   int input_num;
   int output_num;
   int format;
+  bool skip_empty_slots;
   bool debug;
 } opts;
 
@@ -61,9 +62,10 @@ void usage(const char *prog_name) {
        << " [-c N] [-i N] [-o N] [-f FORMAT] [-d] [-h] COMMAND [args]" << endl
        << endl
        << "    -c, --channel N   Kronos general MIDI channel (1-16, default 1)" << endl
-       << "    -f, --format FMT  Format: \"o\" (Org Mode, default) or \"m\" (Markdown)" << endl
+       << "    -f, --format FMT  Format: \"o\" (Org Mode, default), \"m\" (Markdown), \"h\" (hexdump)" << endl
        << "    -i, --input N     Input number (default: attempts to find it automatically)" << endl
        << "    -o, --output N    Output number (default: attempts to find it automatically)" << endl
+       << "    -s, --skip-empty  Skips empty slots when saving" << endl
        << endl
        << "Commands:" << endl
        << endl
@@ -88,6 +90,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {"format", required_argument, 0, 'f'},
     {"input", required_argument, 0, 'i'},
     {"output", required_argument, 0, 'o'},
+    {"skip-empty", no_argument, 0, 's'},
     {"debug", no_argument, 0, 'd'},
     {"help", no_argument, 0, 'h'},
     {0, 0, 0, 0}
@@ -96,7 +99,8 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   opts.input_num = opts.output_num = -1;
   opts.format = EDITOR_FORMAT_ORG_MODE;
   opts.debug = false;
-  while ((ch = getopt_long(argc, argv, "c:f:i:o:dh", longopts, 0)) != -1) {
+  opts.skip_empty_slots = false;
+  while ((ch = getopt_long(argc, argv, "c:f:i:o:sdh", longopts, 0)) != -1) {
     switch (ch) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
@@ -107,13 +111,30 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
       }
       break;
     case 'f':
-      opts.format = optarg[0] == 'm' ? EDITOR_FORMAT_MARKDOWN : EDITOR_FORMAT_ORG_MODE;
+      switch (optarg[0]) {
+      case 'm':
+        opts.format = EDITOR_FORMAT_MARKDOWN;
+        break;
+      case 'o':
+        opts.format = EDITOR_FORMAT_ORG_MODE;
+        break;
+      case 'h':
+        opts.format = EDITOR_FORMAT_HEXDUMP;
+        break;
+      default:
+        cerr << "error: format must be 'm', 'o', or 'h'" << endl;
+        usage(prog_name);
+        exit(1);
+      }
       break;
     case 'i':
       opts.input_num = atoi(optarg);
       break;
     case 'o':
       opts.output_num = atoi(optarg);
+      break;
+    case 's':
+      opts.skip_empty_slots = true;
       break;
     case 'd':
       opts.debug = true;
@@ -207,7 +228,7 @@ int main(int argc, char * const *argv) {
     break;
   case 's':
     kronos.read_set_list(set_list_num, editor.set_list());
-    editor.save_set_list_to_file(path);
+    editor.save_set_list_to_file(path, opts.skip_empty_slots);
     break;
   default:
     usage(prog_name);

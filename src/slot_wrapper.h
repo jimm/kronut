@@ -56,6 +56,8 @@ public:
 
   SlotWrapper(Slot &s) : slot(s) {}
 
+  bool is_empty();
+
   string name();
   int set_name(string str);
 

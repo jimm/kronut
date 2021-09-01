@@ -12,11 +12,23 @@
 #include "set_list_file.h"
 
 Editor::Editor(int format)
+  : _file_format(format)
 {
-  if (format == EDITOR_FORMAT_ORG_MODE)
+  switch (_file_format) {
+  case EDITOR_FORMAT_ORG_MODE:
     _file = new OrgModeSetListFile();
-  else
+    break;
+  case EDITOR_FORMAT_MARKDOWN:
     _file = new MarkdownSetListFile();
+    break;
+  case EDITOR_FORMAT_HEXDUMP:
+    _file = nullptr;
+    break;
+  }
+}
+
+Editor::~Editor() {
+  if (_file != nullptr) delete _file;
 }
 
 int Editor::load_set_list_from_file(const char * const path) {
@@ -139,7 +151,10 @@ void Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
   }
 }
 
-int Editor::save_set_list_to_file(const char * const path) {
+int Editor::save_set_list_to_file(const char * const path, bool skip_empty_slots) {
+  if (_file_format == EDITOR_FORMAT_HEXDUMP)
+    return hexdump(path);
+
   char buf[BUFSIZ];
   SetListWrapper slw(_set_list);
 
@@ -155,6 +170,9 @@ int Editor::save_set_list_to_file(const char * const path) {
   for (int i = 0; i < 128; ++i) {
     Slot &slot = _set_list.slots[i];
     SlotWrapper sw(slot);
+
+    if (skip_empty_slots && sw.is_empty())
+      continue;
 
     _file->header(2, sw.name());
     if (sw.comments().size() > 0)
@@ -194,6 +212,42 @@ void Editor::save_set_list_slot_settings_to_file(SlotWrapper &sw) {
   _file->table_row("Hold Time", sw.hold_time());
   _file->table_row("Kbd Track", sw.keyboard_track());
   _file->table_end();
+}
+
+int Editor::hexdump(const char * const path) {
+  ofstream out;
+
+  out.open(path, std::ofstream::out);
+  if (out.fail()) {
+    cerr << "error opening " << path << " for output" << endl;
+    exit(1);
+  }
+
+  byte *bytes = (byte *)&_set_list;
+  size_t size = sizeof(_set_list);
+  size_t offset = 0;
+
+  // TODO this duplicates dump_hex code in utils.cpp
+  while (size > 0) {
+    int chunk_len = 8 > size ? size : 8;
+    out << setw(8) << setfill('0') << hex << offset << ' ';
+    out << "  ";
+    for (int i = 0; i < chunk_len; ++i)
+      out << ' ' << setw(2) << setfill('0') << hex << (int)bytes[i];
+    for (int i = chunk_len; i < 8; ++i)
+      out << "   ";
+    out << ' ';
+    for (int i = 0; i < chunk_len; ++i)
+      out << (char)((bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
+    out << endl;
+    bytes += chunk_len;
+    size -= chunk_len;
+    offset += chunk_len;
+  }
+
+  out.close();
+
+  return 0;
 }
 
 string Editor::trimmed(string s) {
