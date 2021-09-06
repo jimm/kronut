@@ -153,6 +153,6 @@ Kronut can't save it or let you adjust it.
 
 - Find out where slot MIDI track is. It's only for songs.
 
-- Set list control surface mode: 
+- Set list control surface mode: figure out values (and bit range in struct).
 
 - Keyboard track is only for songs; change the label?

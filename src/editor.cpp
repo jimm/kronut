@@ -106,8 +106,10 @@ void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
 
     if (setting_name == "Slots/Page")
       sw.set_slots_per_page(atoi(value.c_str()));
-    else if (setting_name == "EQ Bypass")
-      _set_list.eq_bypass = atoi(value.c_str());
+    else if (setting_name == "EQ Bypass") {
+      bool val = (value[0] == 't' || value[0] == 'T' || value[0] == 'y' || value[0] == 'Y');
+      sw.set_eq_bypass(val);
+    }
     else if (setting_name == "Band Levels") {
       char *p = (char *)(const char *)value.c_str();
       for (int i = 0; i < 9; ++i) {
@@ -191,7 +193,7 @@ void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
 
   _file->table_headers("Setting", "Value");
   _file->table_row("Slots/Page", slw.slots_per_page());
-  _file->table_row("EQ Bypass", _set_list.eq_bypass);
+  _file->table_row("EQ Bypass", slw.eq_bypass() ? "true (EQ off)" : "false (EQ on)");
   for (int i = 0 ; i < 9; ++i) {
     if (i > 0) ostr << ',';
     ostr << (int)_set_list.band_levels[i];
@@ -267,7 +269,7 @@ void Editor::init_set_list() {
   memset((void *)&_set_list, 0, sizeof(SetList));
   slw.set_name("Empty Set List");
   slw.set_slots_per_page(16);
-  _set_list.eq_bypass = 1;
+  slw.set_eq_bypass(true);
   _set_list.control_surface_mode = 5;
   for (int i = 0; i < 128; ++i) {
     Slot &slot = _set_list.slots[i];

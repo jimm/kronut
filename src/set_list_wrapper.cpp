@@ -14,6 +14,14 @@ int SetListWrapper::set_name(string str) {
   return string_to_chars(set_list.name, SET_LIST_NAME_LEN, str);
 }
 
+bool SetListWrapper::eq_bypass() {
+  return (set_list.eq_bypass & 0x01) == 1;
+}
+
+void SetListWrapper::set_eq_bypass(bool val) {
+  set_list.eq_bypass = (set_list.eq_bypass & 0xfe) + (val ? 1 : 0);
+}
+
 int SetListWrapper::slots_per_page() {
   return 16 >> set_list.slots_per_page;
 }
@@ -32,12 +40,20 @@ void SetListWrapper::set_slots_per_page(int n) {
   }
 }
 
+int SetListWrapper::control_surface_mode() {
+  return set_list.control_surface_mode & 0x03;
+}
+
+void SetListWrapper::set_control_surface_mode(int n) {
+  set_list.control_surface_mode = (set_list.control_surface_mode & 0xfc) + (n & 0x03);
+}
+
 SetListControlSurfaceAssignFrom SetListWrapper::control_surface_assign_from() {
   return (SetListControlSurfaceAssignFrom)(set_list.control_surface_assign_from & 0x01);
 }
 
 void SetListWrapper::set_control_surface_assign_from(SetListControlSurfaceAssignFrom val) {
-  set_list.control_surface_assign_from = (int)(val & 0x01);
+  set_list.control_surface_assign_from = (set_list.control_surface_assign_from & 0xfe) + (int)(val & 0x01);
 }
 
 void SetListWrapper::set_control_surface_assign_from(string str) {

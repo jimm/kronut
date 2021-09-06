@@ -23,8 +23,14 @@ public:
   string name();
   int set_name(string str);
 
+  bool eq_bypass();
+  void set_eq_bypass(bool val);
+
   int slots_per_page();
   void set_slots_per_page(int n);
+
+  int control_surface_mode();
+  void set_control_surface_mode(int n);
 
   SetListControlSurfaceAssignFrom control_surface_assign_from();
   void set_control_surface_assign_from(SetListControlSurfaceAssignFrom val);
