@@ -28,6 +28,10 @@ public:
   Kronos(byte channel, int input_device_num, int output_device_num);
   ~Kronos();
 
+  // For text editing via TextEditor
+  SetList * read_current_set_list();
+
+  // For file import/export via FileEditor
   void read_set_list(int n, SetList &set_list);
   void write_set_list(int n, SetList &set_list);
 
@@ -42,6 +46,9 @@ public:
   KronosMode mode();
   void set_mode(KronosMode mode);
 
+  bool error_reply_seen();
+  const char * const error_reply_message();
+
   void dump_sysex(const char * const msg);
 
 protected:
@@ -54,9 +61,6 @@ protected:
   virtual void read_sysex();
   virtual void get(const byte * const request_sysex, const char * const func_name);
   virtual void send_channel_message(byte status, byte data1, byte data2);
-
-  bool error_reply_seen();
-  const char * const error_reply_message();
 
   virtual KString * read_current_string(int obj_type, byte pad);
   virtual void write_current_string(int obj_type, KString *kstr);

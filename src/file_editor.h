@@ -1,25 +1,25 @@
-#ifndef EDITOR_H
-#define EDITOR_H
+#ifndef FILE_EDITOR_H
+#define FILE_EDITOR_H
 
 #include <string>
 #include "kronos.h"
 
-#define EDITOR_OK 0
-#define EDITOR_ERROR -1
-#define EDITOR_TOO_LONG -2
+#define FILE_EDITOR_OK 0
+#define FILE_EDITOR_ERROR -1
+#define FILE_EDITOR_TOO_LONG -2
 
-#define EDITOR_FORMAT_ORG_MODE 0
-#define EDITOR_FORMAT_MARKDOWN 1
-#define EDITOR_FORMAT_HEXDUMP 2
+#define FILE_EDITOR_FORMAT_ORG_MODE 0
+#define FILE_EDITOR_FORMAT_MARKDOWN 1
+#define FILE_EDITOR_FORMAT_HEXDUMP 2
 
 class SetListWrapper;
 class SlotWrapper;
 class SetListFile;
 
-class Editor {
+class FileEditor {
 public:
-  Editor(int format);
-  ~Editor();
+  FileEditor(int format);
+  ~FileEditor();
 
   int load_set_list_from_file(const char * const path);
   int save_set_list_to_file(const char * const path, bool skip_empty_slots);
@@ -44,4 +44,4 @@ protected:
   void init_set_list();
 };
 
-#endif /* EDITOR_H */
+#endif /* FILE_EDITOR_H */

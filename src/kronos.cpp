@@ -266,6 +266,27 @@ void Kronos::read_set_list(int n, SetList &set_list) {
   memcpy((void *)&set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
 }
 
+SetList * Kronos::read_current_set_list() {
+  const byte request_sysex[] = {
+    SYSEX_HEADER,
+    FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
+    EOX
+  };
+  send_sysex(request_sysex);
+  read_sysex();
+  if (error_reply_seen())
+    fprintf(stderr, "sysex error response: %s\n", error_reply_message());
+
+  int start = 7;
+  int end = start;
+  while (sysex[end] != EOX) ++end;
+
+  MIDIData midi_data(MD_INIT_MIDI, &sysex.data()[start], end - start);
+  SetList *set_list = new SetList();
+  memcpy((void *)set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
+  return set_list;
+}
+
 // ================ writing objects ================
 
 void Kronos::write_current_string(int obj_type, KString *kstr) {

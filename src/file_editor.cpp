@@ -6,32 +6,32 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <sys/errno.h>
-#include "editor.h"
+#include "file_editor.h"
 #include "set_list_wrapper.h"
 #include "slot_wrapper.h"
 #include "set_list_file.h"
 
-Editor::Editor(int format)
+FileEditor::FileEditor(int format)
   : _file_format(format)
 {
   switch (_file_format) {
-  case EDITOR_FORMAT_ORG_MODE:
+  case FILE_EDITOR_FORMAT_ORG_MODE:
     _file = new OrgModeSetListFile();
     break;
-  case EDITOR_FORMAT_MARKDOWN:
+  case FILE_EDITOR_FORMAT_MARKDOWN:
     _file = new MarkdownSetListFile();
     break;
-  case EDITOR_FORMAT_HEXDUMP:
+  case FILE_EDITOR_FORMAT_HEXDUMP:
     _file = nullptr;
     break;
   }
 }
 
-Editor::~Editor() {
+FileEditor::~FileEditor() {
   if (_file != nullptr) delete _file;
 }
 
-int Editor::load_set_list_from_file(const char * const path) {
+int FileEditor::load_set_list_from_file(const char * const path) {
   SetListWrapper slw(_set_list);
   int slot_number = 0;
   bool collect_comments = false;
@@ -96,7 +96,7 @@ int Editor::load_set_list_from_file(const char * const path) {
   return 0;
 }
 
-void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
+void FileEditor::load_set_list_settings_from_file(SetListWrapper &sw) {
   memset(sw.set_list.reserved, 0, 3);
 
   _file->skip_table_headers();
@@ -130,7 +130,7 @@ void Editor::load_set_list_settings_from_file(SetListWrapper &sw) {
 }
 
 // Loads set list slot settings and returns original set list slot index.
-void Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
+void FileEditor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
   _file->skip_table_headers();
   while (!_file->is_table_separator()) {
     string setting_name = _file->table_col1();
@@ -153,8 +153,8 @@ void Editor::load_set_list_slot_settings_from_file(SlotWrapper &sw) {
   }
 }
 
-int Editor::save_set_list_to_file(const char * const path, bool skip_empty_slots) {
-  if (_file_format == EDITOR_FORMAT_HEXDUMP)
+int FileEditor::save_set_list_to_file(const char * const path, bool skip_empty_slots) {
+  if (_file_format == FILE_EDITOR_FORMAT_HEXDUMP)
     return hexdump(path);
 
   char buf[BUFSIZ];
@@ -188,7 +188,7 @@ int Editor::save_set_list_to_file(const char * const path, bool skip_empty_slots
   return 0;
 }
 
-void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
+void FileEditor::save_set_list_settings_to_file(SetListWrapper &slw) {
   ostrstream ostr;
 
   _file->table_headers("Setting", "Value");
@@ -204,7 +204,7 @@ void Editor::save_set_list_settings_to_file(SetListWrapper &slw) {
   _file->table_end();
 }
 
-void Editor::save_set_list_slot_settings_to_file(SlotWrapper &sw) {
+void FileEditor::save_set_list_slot_settings_to_file(SlotWrapper &sw) {
   _file->table_headers("Setting", "Value");
   _file->table_row("Performance", sw.performance_name().c_str());
   _file->table_row("Color", sw.color_name());
@@ -216,7 +216,7 @@ void Editor::save_set_list_slot_settings_to_file(SlotWrapper &sw) {
   _file->table_end();
 }
 
-int Editor::hexdump(const char * const path) {
+int FileEditor::hexdump(const char * const path) {
   ofstream out;
 
   out.open(path, std::ofstream::out);
@@ -252,7 +252,7 @@ int Editor::hexdump(const char * const path) {
   return 0;
 }
 
-string Editor::trimmed(string s) {
+string FileEditor::trimmed(string s) {
   char buf[BUFSIZ], *p;
 
   strncpy(buf, s.c_str(), BUFSIZ-1);
@@ -263,7 +263,7 @@ string Editor::trimmed(string s) {
   return string(p);
 }
 
-void Editor::init_set_list() {
+void FileEditor::init_set_list() {
   SetListWrapper slw(_set_list);
 
   memset((void *)&_set_list, 0, sizeof(SetList));
