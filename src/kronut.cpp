@@ -267,8 +267,11 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
+  char command = argv[0][0];
+
   // load and save commands take two args: a number and a file path
-  if (argc < 3 || !isdigit(argv[1][0])) {
+  if ((command == 'l' || command == 's') &&
+      (argc < 3 || !isdigit(argv[1][0]))) {
     usage(prog_name);
     exit(1);
   }
@@ -276,20 +279,17 @@ int main(int argc, char * const *argv) {
   init_midi();
 
   int status = 0;
-  char command = argv[0][0];
-  int set_list_num = atoi(argv[1]);
-  char *path = argv[2];
   Kronos kronos(opts.channel, opts.input_num, opts.output_num);
   FileEditor file_editor(opts.format);
 
   switch (command) {
   case 'l':
-    if (file_editor.load_set_list_from_file(path) == 0)
-      kronos.write_set_list(set_list_num, file_editor.set_list());
+    if (file_editor.load_set_list_from_file(argv[2]) == 0)
+      kronos.write_set_list(atoi(argv[1]), file_editor.set_list());
     break;
   case 's':
-    kronos.read_set_list(set_list_num, file_editor.set_list());
-    file_editor.save_set_list_to_file(path, opts.skip_empty_slots);
+    kronos.read_set_list(atoi(argv[1]), file_editor.set_list());
+    file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
     break;
   case 'e':
     run_text_editor(kronos);
