@@ -84,21 +84,22 @@ Kronos::~Kronos() {
 
 // ================ sysex I/O ================
 
-void Kronos::send_sysex(const byte * const sysex_bytes) {
+bool Kronos::send_sysex(const byte * const sysex_bytes) {
   clog << "sending sysex" << endl;
   PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
   if (err != 0) {
     cerr << "error writing sysex: " << Pm_GetErrorText(err) << endl;
-    exit(1);
+    return false;
   }
   clog << "sysex sent" << endl;
+  return true;
 }
 
 // Wait for next System Exclusive message to be read into `sysex`. We first
 // receive and dump everything as quickly as we can into a ByteData. Then we
 // post-process it, removing realtime bytes and any bytes before or after
 // the sysex.
-void Kronos::read_sysex() {
+bool Kronos::read_sysex() {
   PmEvent buf[SYSEX_BUF_EVENTS];
   ByteData raw_bytes;
   SysexState state;
@@ -138,17 +139,17 @@ void Kronos::read_sysex() {
     }
     else if (state == waiting && (time(0) - start) >= SYSEX_START_TIMEOUT_SECS) {
       cerr << "timeout waiting for sysex" << endl;
-      exit(1);
+      return false;
     }
     else if (state == receiving && (time(0) - start) >= SYSEX_READ_TIMEOUT_SECS) {
       cerr << "timeout waiting for end of sysex" << endl;
-      exit(1);
+      return false;
     }
   }
 
   if (state == error) {
     cerr << "error receiving sysex: " << Pm_GetErrorText(err) << endl;
-    return;
+    return false;
   }
 
   // Filter out realtime bytes and bytes before and after sysex bytes.
@@ -173,15 +174,19 @@ void Kronos::read_sysex() {
       }
     }
   }
+  return true;
 }
 
-void Kronos::get(const byte * const request_sysex, const char * const func_name) {
-  send_sysex(request_sysex);
-  read_sysex();
+bool Kronos::get(const byte * const request_sysex, const char * const func_name) {
+  if (!send_sysex(request_sysex))
+    return false;
+  if (!read_sysex())
+    return false;
   if (error_reply_seen()) {
     cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << endl;
-    exit(1);
+    return false;
   }
+  return true;
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
@@ -229,7 +234,8 @@ KString * Kronos::read_current_string(int obj_type, byte pad) {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
-  get(request_sysex, "read_current_string");
+  if (!get(request_sysex, "read_current_string"))
+    return 0;
 
   int start = 7;
   int end = start;
@@ -256,7 +262,8 @@ void Kronos::read_set_list(int n, SetList &set_list) {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  get(request_sysex, "read_current_set_list");
+  if (!get(request_sysex, "read_set_list"))
+    return;
 
   int start = 7;
   int end = start;
@@ -272,10 +279,14 @@ SetList * Kronos::read_current_set_list() {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  send_sysex(request_sysex);
-  read_sysex();
-  if (error_reply_seen())
+  if (!send_sysex(request_sysex))
+    return 0;
+  if (!read_sysex())
+    return 0;
+  if (error_reply_seen()) {
     fprintf(stderr, "sysex error response: %s\n", error_reply_message());
+    return 0;
+  }
 
   int start = 7;
   int end = start;
@@ -300,7 +311,8 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   memcpy(request_sysex + 7, kstr->midi_bytes, kstr->midi_len);
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
-  get(request_sysex, "write_current_string");
+  if (!get(request_sysex, "write_current_string"))
+    return;
 }
 
 void Kronos::write_current_slot_name(KString *kstr) {
@@ -331,7 +343,8 @@ void Kronos::write_set_list(int n, SetList &set_list) {
   memcpy(request_sysex + header_size, midi_data.midi_bytes, midi_data.midi_len); // data
   request_sysex[header_size + midi_data.midi_len] = EOX; // end of sysex
 
-  get(request_sysex, "write_current_set_list");
+  if (!get(request_sysex, "write_current_set_list"))
+    return;
 
   save_current_set_list();
 }
@@ -346,7 +359,8 @@ void Kronos::save_current_set_list() {
     EOX
   };
 
-  get(request_sysex, "save_current_set_list");
+  if (!get(request_sysex, "save_current_set_list"))
+    return;
 }
 
 // ================ mode and movement commands ================
@@ -356,7 +370,8 @@ KronosMode Kronos::mode() {
     SYSEX_HEADER,
     FUNC_CODE_MODE_REQ, EOX
   };
-  get(request_sysex, "mode");
+  if (!get(request_sysex, "mode"))
+    return mode_combination;    // what else should I do?
   return (KronosMode)(sysex[5] & 0x0f);
 }
 

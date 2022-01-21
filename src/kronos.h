@@ -57,9 +57,9 @@ protected:
   byte channel;
   ByteData sysex;
 
-  virtual void send_sysex(const byte * const sysex);
-  virtual void read_sysex();
-  virtual void get(const byte * const request_sysex, const char * const func_name);
+  virtual bool send_sysex(const byte * const sysex);
+  virtual bool read_sysex();
+  virtual bool get(const byte * const request_sysex, const char * const func_name);
   virtual void send_channel_message(byte status, byte data1, byte data2);
 
   virtual KString * read_current_string(int obj_type, byte pad);

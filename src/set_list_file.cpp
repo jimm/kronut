@@ -95,7 +95,6 @@ void SetListFile::table_row(const char * const col1, const char * const col2) {
 }
 
 void SetListFile::table_row(const char * const col1, const string &col2) {
-  fprintf(stderr, "col1 %s, col2 %s\n", col1, col2.c_str()); // DEBUG
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
        << " | " << setw(COL2_DATA_WIDTH) << left << col2
        << " |" << endl;

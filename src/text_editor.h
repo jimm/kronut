@@ -27,7 +27,7 @@ public:
   void print_set_list_slot_names();
 
   // Read current slot's name and comment.
-  void read_slot() { read_maybe_dump(false); }
+  bool read_slot() { return read_maybe_dump(false); }
 
   // Write current slot's name and comment.
   void write_slot();
@@ -37,7 +37,7 @@ protected:
   string name;
   string comments;
 
-  void read_maybe_dump(bool dump);
+  bool read_maybe_dump(bool dump);
   void save_to_file();
   virtual int edit_file();
   void load_from_file();

@@ -12,7 +12,8 @@ TextEditor::TextEditor(Kronos &k) : kronos(k), name(""), comments("") {
 
 int TextEditor::edit_current_slot(bool read_from_kronos) {
   if (read_from_kronos)
-    read_slot();
+    if (!read_slot())
+      return TEXT_EDITOR_ERROR;
 
   save_to_file();
   int status = edit_file();
@@ -31,7 +32,8 @@ int TextEditor::edit_current_slot(bool read_from_kronos) {
 }
 
 void TextEditor::print_current_slot() {
-  read_slot();
+  if (!read_slot())
+    return;
   puts(name.c_str());
   puts("");
   puts(comments.c_str());
@@ -41,6 +43,9 @@ void TextEditor::print_set_list_slot_names() {
   char buf[BUFSIZ];
 
   SetList *set_list = kronos.read_current_set_list();
+  if (set_list == 0)
+    return;
+
   memcpy(buf, set_list->name, SET_LIST_NAME_LEN);
   buf[SET_LIST_NAME_LEN] = '\0';
   printf("Set List: %s\n", buf);
@@ -53,20 +58,28 @@ void TextEditor::print_set_list_slot_names() {
   delete set_list;
 }
 
-void TextEditor::read_maybe_dump(bool dump) {
+bool TextEditor::read_maybe_dump(bool dump) {
   KString *kstr;
 
   kstr = kronos.read_current_slot_name();
+  if (kstr == 0)
+    return false;
+
   name = kstr->str();
   if (dump)
     kronos.dump_sysex("slot name");
   delete kstr;
 
   kstr = kronos.read_current_slot_comments();
+  if (kstr == 0)
+    return false;
+
   comments = kstr->str();
   if (dump)
     kronos.dump_sysex("slot comments");
   delete kstr;
+
+  return true;
 }
 
 void TextEditor::save_to_file() {
