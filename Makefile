@@ -2,7 +2,7 @@ NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
 MACOS_VER = 10.9
 CPPFLAGS += -std=c++11 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
-LIBS = -lc -lc++ -lportmidi
+LIBS = -lc -lc++ -framework CoreMIDI -framework Foundation
 LDFLAGS += $(LIBS)
 
 prefix = /usr/local

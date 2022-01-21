@@ -1,3 +1,4 @@
+#include <CoreMIDI/MIDIServices.h>
 #include <iostream>
 #include <iomanip>
 #include <getopt.h>
@@ -5,11 +6,28 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <portmidi.h>
 #include "slot.h"
 #include "kronos.h"
 #include "file_editor.h"
 #include "text_editor.h"
+
+#define CFSTRING_BUF_SIZE 512
+
+/*
+ * OOPS: require_noerr is now ca_require_noerr, and it's in CAXException.h
+ * which doesn't seem to be in a standard place.
+ */
+#define ca_require_noerr(errorCode, exceptionLabel)          \
+  do {                                                       \
+    int evalOnceErrorCode = (errorCode);                     \
+    if ( __builtin_expect(0 != evalOnceErrorCode, 0) ) {     \
+      fprintf(stderr, "ca_require_noerr: [%s, %d] (goto %s;) %s:%d\n", #errorCode,  evalOnceErrorCode, #exceptionLabel, __FILE__, __LINE__); \
+      goto exceptionLabel;                                   \
+    }                                                        \
+  } while (0)
+#define okl(func,msg,lbl) ca_require_noerr((err=msg, result=func), lbl)
+#define ok(func,msg) ca_require_noerr((err=msg, result=func), fail)
+/* #define ok(func,msg) okl(func,msg,fail) */
 
 using namespace std;
 
@@ -50,38 +68,60 @@ const char *usage_lines[] = {
   "    help         This help."
 };
 
-int find_kronos_input_num() {
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->input == 1 && strncasecmp("kronos keyboard", info->name, 15) == 0)
+void get_value_of(MIDIObjectRef ref, char *buf, CFStringRef cf_string_ref) {
+  CFStringRef pvalue;
+  MIDIObjectGetStringProperty(ref, cf_string_ref, &pvalue);
+  CFStringGetCString(pvalue, buf, CFSTRING_BUF_SIZE, 0);
+  CFRelease(pvalue);
+}
+
+void name_of(MIDIObjectRef ref, char *buf, CFStringRef) {
+  get_value_of(ref, buf, kMIDIPropertyName);
+}
+
+ItemCount find_kronos_input_num() {
+  char model[CFSTRING_BUF_SIZE];
+  char name[CFSTRING_BUF_SIZE];
+
+  ItemCount i, ndev = MIDIGetNumberOfSources();
+  for (i = 0; i < ndev; ++i) {
+    MIDIEndpointRef end_ref = MIDIGetSource(i);
+    get_value_of(end_ref, model, kMIDIPropertyModel);
+    get_value_of(end_ref, name, kMIDIPropertyName);
+    if (strncasecmp(model, "kronos", 6) == 0 && strncasecmp(name, "keyboard", 7) == 0)
       return i;
   }
   return -1;
 }
 
 int find_kronos_output_num() {
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->output == 1 && strncasecmp("kronos sound", info->name, 12) == 0)
+  char model[CFSTRING_BUF_SIZE];
+  char name[CFSTRING_BUF_SIZE];
+
+  ItemCount i, ndev = MIDIGetNumberOfDestinations();
+  for (i = 0; i < ndev; ++i) {
+    MIDIEndpointRef end_ref = MIDIGetDestination(i);
+    get_value_of(end_ref, model, kMIDIPropertyModel);
+    get_value_of(end_ref, name, kMIDIPropertyName);
+    if (strncasecmp(model, "kronos", 6) == 0 && strncasecmp(name, "sound", 5) == 0)
       return i;
   }
   return -1;
 }
 
 void close_midi() {
-  Pm_Terminate();
 }
 
 void init_midi() {
-  PmError err = Pm_Initialize();
-  if (err != 0) {
-    cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << endl;
-    exit(1);
-  }
+  // PmError err = Pm_Initialize();
+  // if (err != 0) {
+  //   cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << endl;
+  //   exit(1);
+  // }
 
-  // Pm_Initialize(), when it looks for default devices, can set errno to a
-  // non-zero value. Reinitialize it here.
-  errno = 0;
+  // // Pm_Initialize(), when it looks for default devices, can set errno to a
+  // // non-zero value. Reinitialize it here.
+  // errno = 0;
 }
 
 void usage(const char *prog_name) {
@@ -104,6 +144,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {0, 0, 0, 0}
   };
 
+  opts.channel = 0;
   opts.input_num = opts.output_num = -1;
   opts.format = FILE_EDITOR_FORMAT_ORG_MODE;
   opts.debug = false;
@@ -154,22 +195,38 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   }
 }
 
-void list_devices(const char * const type_name, bool show_inputs) {
-  cout << type_name << ':' << endl;
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (show_inputs ? (info->input == 1) : (info->output == 1)) {
-      const char *name = info->name;
-      const char *q = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
-      cout << "  " << setw(2) << i << ": " << q << name << q << endl;
-    }
-  }
+void print_endpoint(int i, MIDIEndpointRef end_ref) {
+  char model[CFSTRING_BUF_SIZE];
+  char name[CFSTRING_BUF_SIZE];
+
+  get_value_of(end_ref, model, kMIDIPropertyModel);
+  get_value_of(end_ref, name, kMIDIPropertyName);
+  const char *q1 = (model[0] == ' ' || model[strlen(model)-1] == ' ') ? "\"" : "";
+  const char *q2 = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
+  cout << "  " << setw(2) << i << ": "
+       << q2 << model << q2 << " "
+       << q2 << name << q2 << endl;
 }
 
-// type is 0 for input, 1 for output
-void list_all_devices() {
-  list_devices("Inputs", true);
-  list_devices("Outputs", false);
+void print_sources_and_destinations() {
+  ItemCount i, ndev;
+
+  ndev = MIDIGetNumberOfSources();
+  cout << "Inputs:" << endl;
+  for (i = 0; i < ndev; ++i)
+    print_endpoint(i, MIDIGetSource(i));
+
+  cout << "Outputs:" << endl;
+  ndev = MIDIGetNumberOfDestinations();
+  for (i = 0; i < ndev; ++i)
+    print_endpoint(i, MIDIGetDestination(i));
+}
+
+// Returns new CFString ref. Don't forget to call CFRelease(cf_str) when
+// you're done with it.
+CFStringRef cstr_to_cfstring(const char *str) {
+  CFStringRef cf_str;
+  return CFStringCreateWithCString(kCFAllocatorDefault, str, kCFStringEncodingASCII);
 }
 
 void run_text_editor(Kronos &k) {
@@ -242,7 +299,7 @@ int main(int argc, char * const *argv) {
     exit(0);
   }
   if (strncmp(argv[0], "li", 2) == 0) {
-    list_all_devices();
+    print_sources_and_destinations();
     exit(0);
   }
 
