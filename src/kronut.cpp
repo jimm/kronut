@@ -41,6 +41,7 @@ struct opts {
   bool skip_empty_slots;
   bool debug;
 } opts;
+MIDIClientRef client = 0;
 
 const char *usage_lines[] = {
   " [-c N] [-f FORMAT] [-i N] [-o N] [-s] [-d] [-h] COMMAND [args]",
@@ -109,19 +110,13 @@ int find_kronos_output_num() {
   return -1;
 }
 
-void close_midi() {
+void init_midi() {
+  MIDIClientCreate(CFSTR("Kronut"), NULL, NULL, &client);
 }
 
-void init_midi() {
-  // PmError err = Pm_Initialize();
-  // if (err != 0) {
-  //   cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << endl;
-  //   exit(1);
-  // }
-
-  // // Pm_Initialize(), when it looks for default devices, can set errno to a
-  // // non-zero value. Reinitialize it here.
-  // errno = 0;
+void close_midi() {
+  MIDIClientDispose(client);
+  client = 0;
 }
 
 void usage(const char *prog_name) {
@@ -336,7 +331,7 @@ int main(int argc, char * const *argv) {
   init_midi();
 
   int status = 0;
-  Kronos kronos(opts.channel, opts.input_num, opts.output_num);
+  Kronos kronos(opts.channel, client, opts.input_num, opts.output_num);
   FileEditor file_editor(opts.format);
 
   switch (command) {

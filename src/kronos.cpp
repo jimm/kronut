@@ -49,11 +49,9 @@ static const char * const error_reply_messages[] = {
 
 static void midi_read_proc(const MIDIPacketList *pktlist, void *ref_con, void *conn_ref_con) {
   Kronos *kronos = (Kronos *)ref_con;
-
-  MIDIPacket *packet = (MIDIPacket *)pktlist->packet;
-  unsigned int j;
-  for (j = 0; j < pktlist->numPackets; ++j) {
-    kronos->receive_midi_bytes(packet->data, packet->length);
+  const MIDIPacket *packet = &pktlist->packet[0];
+  for (unsigned int i = 0; i < pktlist->numPackets; ++i) {
+    kronos->receive_midi_packet(packet);
     packet = MIDIPacketNext(packet);
   }
 }
@@ -65,17 +63,14 @@ Kronos *Kronos_instance() {
 // ================ allocation ================
 
 // chan must be 0-15
-Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
+Kronos::Kronos(byte chan, MIDIClientRef client, int input_device_num, int output_device_num)
   : channel(chan), receive_state(idle)
 {
-  fprintf(stderr, "channel = %d\n", (int)chan); // DEBUG
-
-  MIDIClientRef client = 0;
-  MIDIClientCreate(CFSTR("Kronut"), NULL, NULL, &client);
-
+  in_endpoint = MIDIGetSource(input_device_num);
   MIDIInputPortCreate(client, CFSTR("Kronos Input Port"), midi_read_proc, (void*)this, &in_port);
-  MIDIPortConnectSource(in_port, MIDIGetSource(input_device_num), 0);
+  MIDIPortConnectSource(in_port, in_endpoint, 0);
 
+  out_endpoint = MIDIGetDestination(output_device_num);
   MIDIOutputPortCreate(client, CFSTR("Kronos Output Port"), &out_port);
 
   kronos_instance = this;
@@ -84,43 +79,49 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
 Kronos::~Kronos() {
   if (kronos_instance == this)
     kronos_instance = nullptr;
+  if (in_port != 0)
+    MIDIPortDispose(in_port);
+  if (in_endpoint != 0)
+    MIDIEndpointDispose(in_endpoint);
+  if (out_port != 0)
+    MIDIPortDispose(out_port);
+  if (out_endpoint != 0)
+    MIDIEndpointDispose(out_endpoint);
 }
 
 // ================ sysex I/O ================
 
-// TODO timeout
+void midi_completion_proc(MIDISysexSendRequest *_request) {
+  cout << "done sending sysex message" << endl; // DEBUG
+}
+
 bool Kronos::send_sysex(const byte * const sysex_bytes, const int num_bytes) {
-  fprintf(stderr, "sending sysex\n"); // DEBUG
   MIDISysexSendRequest request = {
-    out_port,                   // MIDIEndpointRef
+    out_endpoint,               // MIDIEndpointRef
     sysex_bytes,                // const Byte *
     (UInt32)num_bytes,          // UInt32
     false,                      // Boolean
     {0, 0, 0},                  // Byte[3] reserved
-    0,                          // MIDICompletionProc
+    midi_completion_proc,       // MIDICompletionProc
     0                           // void *
   };
 
-  receive_state = waiting;
   sysex.clear();
-
-  OSStatus status = MIDISendSysex(&request);              // DEBUG
-  fprintf(stderr, "MIDISendSysex status = %d\n", status); // DEBUG
-
-  return true;
+  receive_state = waiting;
+  OSStatus status = MIDISendSysex(&request);
+  return status == 0;
 }
 
 // Wait for next System Exclusive message to be read into `sysex`. We first
 // receive and dump everything as quickly as we can into a ByteData. Then we
 // post-process it, removing realtime bytes and any bytes before or after
 // the sysex.
-void Kronos::receive_midi_bytes(byte *data, int len) {
+void Kronos::receive_midi_packet(const MIDIPacket *packet) {
   if (receive_state == idle)
     return;
 
-  for ( ; len > 0 ; --len, ++data) {
-    byte b = *data;
-    fprintf(stderr, "byte %02x\n", (int)b); // DEBUG
+  for (unsigned int i = 0; i < packet->length && receive_state != received; ++i) {
+    byte b = packet->data[i];
     switch (b) {
     case SYSEX:
       receive_state = receiving;
@@ -134,7 +135,7 @@ void Kronos::receive_midi_bytes(byte *data, int len) {
     default:
       if (receive_state == receiving && !is_realtime(b)) {
         if (is_status(b)) {    // we ignore the status byte
-          sysex.append(EOX);
+          b = EOX;
           receive_state = received;
         }
         sysex.append(b);
@@ -148,16 +149,24 @@ bool Kronos::wait_for_sysex() {
   int i;
   struct timespec rqtp = {0, WAIT_NANOSECS};
 
-  fprintf(stderr, "wait_for_sysex\n"); // DEBUG
-  for (i = 0; i < START_WAIT_TIMES && receive_state != receiving && receive_state != received; ++i)
+  cout << "starting wait_for_sysex" << endl;
+  for (i = 0; i < START_WAIT_TIMES; ++i) {
+    SysexState s = receive_state;
+    if (s == receiving || s == received)
+      break;
     nanosleep(&rqtp, 0);
+  }
   if (i >= START_WAIT_TIMES) {
     cerr << "timeout waiting for sysex" << endl;
     return false;
   }
 
-  for (i = 0; i < TIMEOUT_WAIT_TIMES && receive_state != received; ++i)
+  for (i = 0; i < TIMEOUT_WAIT_TIMES; ++i) {
+    SysexState s = receive_state;
+    if (s == received)
+      break;
     nanosleep(&rqtp, 0);
+  }
   if (i >= TIMEOUT_WAIT_TIMES) {
     cerr << "timeout waiting for end of sysex" << endl;
     return false;
@@ -180,11 +189,10 @@ bool Kronos::get(const byte * const request_sysex, const int request_num_bytes, 
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
-  // PmError err = Pm_WriteShort(output, 0, Pm_Message(status, data1, data2));
-  // if (err != 0) {
-  //   cerr << "error writing channel message: " << Pm_GetErrorText(err) << endl;
-  //   exit(1);
-  // }
+  MIDIPacketList pktlist;
+  pktlist.numPackets = 1;
+  pktlist.packet[0] = {0, 3, {status, data1, data2}};
+  MIDISend(out_port, out_endpoint, &pktlist);
 }
 
 // ================ error detection ================
