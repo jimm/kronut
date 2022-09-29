@@ -66,12 +66,18 @@ Kronos *Kronos_instance() {
 Kronos::Kronos(byte chan, MIDIClientRef client, int input_device_num, int output_device_num)
   : channel(chan), receive_state(idle)
 {
-  in_endpoint = MIDIGetSource(input_device_num);
-  MIDIInputPortCreate(client, CFSTR("Kronos Input Port"), midi_read_proc, (void*)this, &in_port);
-  MIDIPortConnectSource(in_port, in_endpoint, 0);
+  if (client != 0) {
+    in_endpoint = MIDIGetSource(input_device_num);
+    MIDIInputPortCreate(client, CFSTR("Kronos Input Port"), midi_read_proc, (void*)this, &in_port);
+    MIDIPortConnectSource(in_port, in_endpoint, 0);
 
-  out_endpoint = MIDIGetDestination(output_device_num);
-  MIDIOutputPortCreate(client, CFSTR("Kronos Output Port"), &out_port);
+    out_endpoint = MIDIGetDestination(output_device_num);
+    MIDIOutputPortCreate(client, CFSTR("Kronos Output Port"), &out_port);
+  }
+  else {                        // testing
+    in_endpoint = 0;
+    out_endpoint = 0;
+  }
 
   kronos_instance = this;
 }
