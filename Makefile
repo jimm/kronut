@@ -33,7 +33,7 @@ test: $(NAME)_test
 $(NAME)_test:	$(OBJS) $(TEST_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
 
-install:	$(bindir)/$(NAME)
+install:	$(NAME)
 	install ./$(NAME) $(bindir)
 
 uninstall:
