@@ -104,6 +104,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     {0, 0, 0, 0}
   };
 
+  opts.channel = 0;
   opts.input_num = opts.output_num = -1;
   opts.format = FILE_EDITOR_FORMAT_ORG_MODE;
   opts.debug = false;
@@ -288,8 +289,8 @@ int main(int argc, char * const *argv) {
       kronos.write_set_list(atoi(argv[1]), file_editor.set_list());
     break;
   case 's':
-    kronos.read_set_list(atoi(argv[1]), file_editor.set_list());
-    file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
+    if (kronos.read_set_list(atoi(argv[1]), file_editor.set_list()))
+      file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
     break;
   case 'e':
     run_text_editor(kronos);
@@ -299,6 +300,7 @@ int main(int argc, char * const *argv) {
     status = 1;
   }
 
+  kronos.close();
   close_midi();
   exit(status);
   return status;

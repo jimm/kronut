@@ -56,7 +56,7 @@ Kronos *Kronos_instance() {
 
 // chan must be 0-15
 Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
-  : channel(chan)
+  : channel(chan), input(0), output(0)
 {
   if (input_device_num >= 0) {  // negative means we're testing
     PmError err = Pm_OpenInput(&input, input_device_num, 0, MIDI_BUFSIZ, 0, 0);
@@ -80,6 +80,18 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
 Kronos::~Kronos() {
   if (kronos_instance == this)
     kronos_instance = nullptr;
+  close();
+}
+
+void Kronos::close() {
+  if (input != 0) {
+    Pm_Close(input);
+    input = 0;
+  }
+  if (output != 0) {
+    Pm_Close(output);
+    output = 0;
+  }
 }
 
 // ================ sysex I/O ================
@@ -253,8 +265,11 @@ KString * Kronos::read_current_slot_comments() {
   return read_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, 0);
 }
 
-void Kronos::read_set_list(int n, SetList &set_list) {
-  set_mode(mode_set_list);
+// Returns true on success, false on error.
+bool Kronos::read_set_list(int n, SetList &set_list) {
+  if (!set_mode(mode_set_list))
+    return false;
+
   goto_set_list(n);
 
   const byte request_sysex[] = {
@@ -263,7 +278,7 @@ void Kronos::read_set_list(int n, SetList &set_list) {
     EOX
   };
   if (!get(request_sysex, "read_set_list"))
-    return;
+    return false;
 
   int start = 7;
   int end = start;
@@ -271,6 +286,7 @@ void Kronos::read_set_list(int n, SetList &set_list) {
 
   MIDIData midi_data(MD_INIT_MIDI, &sysex.data()[start], end - start);
   memcpy((void *)&set_list, (void *)midi_data.internal_bytes, midi_data.internal_len);
+  return true;
 }
 
 SetList * Kronos::read_current_set_list() {
@@ -284,7 +300,7 @@ SetList * Kronos::read_current_set_list() {
   if (!read_sysex())
     return 0;
   if (error_reply_seen()) {
-    fprintf(stderr, "sysex error response: %s\n", error_reply_message());
+    cerr << "sysex error response: " << error_reply_message() << endl;
     return 0;
   }
 
@@ -323,8 +339,10 @@ void Kronos::write_current_slot_comments(KString *kstr) {
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
-void Kronos::write_set_list(int n, SetList &set_list) {
-  set_mode(mode_set_list);
+bool Kronos::write_set_list(int n, SetList &set_list) {
+  if (!set_mode(mode_set_list))
+    return false;
+
   goto_set_list(n);
 
   MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
@@ -344,9 +362,10 @@ void Kronos::write_set_list(int n, SetList &set_list) {
   request_sysex[header_size + midi_data.midi_len] = EOX; // end of sysex
 
   if (!get(request_sysex, "write_current_set_list"))
-    return;
+    return false;
 
   save_current_set_list();
+  return true;
 }
 
 // ================ saving objects to non-volatile storage ================
@@ -375,12 +394,12 @@ KronosMode Kronos::mode() {
   return (KronosMode)(sysex[5] & 0x0f);
 }
 
-void Kronos::set_mode(KronosMode mode) {
+bool Kronos::set_mode(KronosMode mode) {
   const byte request_sysex[] = {
     SYSEX_HEADER,
     FUNC_CODE_MODE_CHANGE, (byte)mode, EOX
   };
-  get(request_sysex, "set_mode");
+  return get(request_sysex, "set_mode");
 }
 
 void Kronos::goto_set_list(int n) {

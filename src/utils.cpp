@@ -21,9 +21,11 @@ char * c_str(char *p, size_t len) {
   return c_str_buf;
 }
 
-void dump_hex(byte *bytes, size_t size, const char * const msg) {
+void dump_hex(const byte * const bytes, size_t size, const char * const msg) {
+  const byte *p = (const byte *)bytes;
+
   cout << msg << endl;
-  if (bytes == 0) {
+  if (p == 0) {
     cout << "<null>" << endl;
     return;
   }
@@ -37,14 +39,14 @@ void dump_hex(byte *bytes, size_t size, const char * const msg) {
     cout << setw(8) << setfill('0') << hex << offset << ' ';
     cout << "  ";
     for (int i = 0; i < chunk_len; ++i)
-      cout << ' ' << setw(2) << setfill('0') << hex << (int)bytes[i];
+      cout << ' ' << setw(2) << setfill('0') << hex << (int)p[i];
     for (int i = chunk_len; i < 8; ++i)
       cout << "   ";
     cout << ' ';
     for (int i = 0; i < chunk_len; ++i)
-      cout << (char)((bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
+      cout << (char)((p[i] >= 32 && p[i] < 127) ? p[i] : '.');
     cout << endl;
-    bytes += chunk_len;
+    p += chunk_len;
     size -= chunk_len;
     offset += chunk_len;
   }
