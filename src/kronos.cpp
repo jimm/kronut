@@ -111,7 +111,7 @@ bool Kronos::send_sysex(const byte * const sysex_bytes) {
 // receive and dump everything as quickly as we can into a ByteData. Then we
 // post-process it, removing realtime bytes and any bytes before or after
 // the sysex.
-bool Kronos::read_sysex() {
+bool Kronos::read_sysex(const char * const func_name) {
   PmEvent buf[SYSEX_BUF_EVENTS];
   ByteData raw_bytes;
   SysexState state;
@@ -150,11 +150,11 @@ bool Kronos::read_sysex() {
       }
     }
     else if (state == waiting && (time(0) - start) >= SYSEX_START_TIMEOUT_SECS) {
-      cerr << "timeout waiting for sysex" << endl;
+      cerr << "Kronos::" << func_name << ": timeout waiting for sysex" << endl;
       return false;
     }
     else if (state == receiving && (time(0) - start) >= SYSEX_READ_TIMEOUT_SECS) {
-      cerr << "timeout waiting for end of sysex" << endl;
+      cerr << "Kronos::" << func_name << ": timeout waiting for end of sysex" << endl;
       return false;
     }
   }
@@ -192,7 +192,7 @@ bool Kronos::read_sysex() {
 bool Kronos::get(const byte * const request_sysex, const char * const func_name) {
   if (!send_sysex(request_sysex))
     return false;
-  if (!read_sysex())
+  if (!read_sysex(func_name))
     return false;
   if (error_reply_seen()) {
     cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << endl;
@@ -297,7 +297,7 @@ SetList * Kronos::read_current_set_list() {
   };
   if (!send_sysex(request_sysex))
     return 0;
-  if (!read_sysex())
+  if (!read_sysex("read_current_set_list"))
     return 0;
   if (error_reply_seen()) {
     cerr << "sysex error response: " << error_reply_message() << endl;

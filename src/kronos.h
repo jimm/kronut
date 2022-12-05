@@ -60,7 +60,7 @@ protected:
   ByteData sysex;
 
   virtual bool send_sysex(const byte * const sysex);
-  virtual bool read_sysex();
+  virtual bool read_sysex(const char * const func_name);
   virtual bool get(const byte * const request_sysex, const char * const func_name);
   virtual void send_channel_message(byte status, byte data1, byte data2);
 
