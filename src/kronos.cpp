@@ -28,7 +28,6 @@ enum SysexState {
   error
 };
 
-static const char * const error_format = "Kronos::%s sysex error response: %s\n";
 static Kronos *kronos_instance;
 
 static const char * const error_reply_messages[] = {
