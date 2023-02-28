@@ -106,7 +106,7 @@ int TextEditor::edit_file() {
   }
   if (options == 0)
     options = (char *)"";
-  sprintf(buf, "%s %s %s 2>&1", editor, options, TEXT_EDITOR_TMPFILE);
+  snprintf(buf, 1024, "%s %s %s 2>&1", editor, options, TEXT_EDITOR_TMPFILE);
   return system(buf);
 }
 

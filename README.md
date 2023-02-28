@@ -6,9 +6,9 @@ readable and editable files in a format like Markdown or Org Mode, and it
 can read those files and save them back to the Kronos. This lets you edit
 global set list settings, edit slots, and move them around within the set.
 
-Kronut also lets you edit the slot names and comments more directly, without
-the intermediate step of saving the whole set list to a file first. In this
-mode you can't move slots around using Kronut.
+Kronut also lets you edit individual slot names and comments without the
+intermediate step of saving the whole set list to a file first. In this mode
+you can't move slots around using Kronut.
 
 # Getting Kronut
 
@@ -19,8 +19,12 @@ You'll also need to install the http://portmedia.sourceforge.net/portmidi/
 library and headers. If you use [Homebrew](https://brew.sh/) then you can
 install it via `brew install portmidi`.
 
-To compile the code, run `make`. To compile and run the tests, run `make
-test`.
+To compile the code, run `make`.
+
+To compile and run the tests, you'll need to install
+[Catch2](https://github.com/catchorg/Catch2). The easiest way to do that is
+via `brew install catch2`. After you've done that you can compile and run
+the tests by running `make test`.
 
 To install `kronut` system-wide, run `make install`. By default the
 executable is installed to `/usr/local/bin` but you can override that with

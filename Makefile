@@ -1,8 +1,9 @@
 NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
 MACOS_VER = 10.9
-CPPFLAGS += -std=c++11 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
+CPPFLAGS += -std=c++14 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
 LIBS = -lc -lc++ -lportmidi
+TESTLIBS = -lCatch2 -lCatch2Main
 LDFLAGS += $(LIBS)
 
 prefix = /usr/local
@@ -28,10 +29,10 @@ $(NAME): $(OBJS)
 -include $(CPP_SRC:%.cpp=%.d)
 
 test: $(NAME)_test
-	./$(NAME)_test --use-colour no $(CATCH_CATEGORY)
+	./$(NAME)_test --colour-mode none $(CATCH_CATEGORY)
 
 $(NAME)_test:	$(OBJS) $(TEST_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
+	$(CXX) $(LDFLAGS) $(TESTLIBS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
 
 install:	$(NAME)
 	install ./$(NAME) $(bindir)
