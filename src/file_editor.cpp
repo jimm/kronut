@@ -39,7 +39,7 @@ int FileEditor::load_set_list_from_file(const char * const path) {
   string comments;
 
   if (!_file->open(path, "r")) {
-    cerr << "error: can't open \"" << path << "\" for reading: " << strerror(errno) << endl;
+    cerr << "error: can't open \"" << path << "\" for reading: " << strerror(errno) << "\n";
     return errno;
   }
 
@@ -50,7 +50,7 @@ int FileEditor::load_set_list_from_file(const char * const path) {
       // Set List name
       name = _file->header_text(1);
       if (slw.set_name(trimmed(name)) != 0)
-        cerr << "warning: set list name \"" << name << "\" is too long and will be truncated" << endl;
+        cerr << "warning: set list name \"" << name << "\" is too long and will be truncated\n";
 
       _file->skip_blank_lines();
       load_set_list_settings_from_file(slw);
@@ -69,7 +69,7 @@ int FileEditor::load_set_list_from_file(const char * const path) {
       if (sw.set_name(trimmed(name)) != 0)
         cerr << "warning: slot " << setw(3) << setfill('0') << slot_number
              << " named \"" << name << "\" is too long and will be truncated"
-             << endl;
+             << "\n";
 
       string trimmed_comments = trimmed(comments);
       if (sw.set_comments(trimmed_comments) != 0)
@@ -77,7 +77,7 @@ int FileEditor::load_set_list_from_file(const char * const path) {
              << " named \"" << name
              << "\" comments \""
              << trimmed_comments.substr(0, 20) << "...\" are too long and will be truncated"
-             << endl;
+             << "\n";
 
       load_set_list_slot_settings_from_file(sw);
 
@@ -161,7 +161,7 @@ int FileEditor::save_set_list_to_file(const char * const path, bool skip_empty_s
   SetListWrapper slw(_set_list);
 
   if (!_file->open(path, "w")) {
-    cerr << "error: can't open \"" << path << "\" for writing: " << strerror(errno) << endl;
+    cerr << "error: can't open \"" << path << "\" for writing: " << strerror(errno) << "\n";
     return errno;
   }
 
@@ -221,7 +221,7 @@ int FileEditor::hexdump(const char * const path) {
 
   out.open(path, std::ofstream::out);
   if (out.fail()) {
-    cerr << "error opening " << path << " for output" << endl;
+    cerr << "error opening " << path << " for output\n";
     exit(1);
   }
 
@@ -241,7 +241,7 @@ int FileEditor::hexdump(const char * const path) {
     out << ' ';
     for (int i = 0; i < chunk_len; ++i)
       out << (char)((bytes[i] >= 32 && bytes[i] < 127) ? bytes[i] : '.');
-    out << endl;
+    out << "\n";
     bytes += chunk_len;
     size -= chunk_len;
     offset += chunk_len;

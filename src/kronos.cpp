@@ -60,7 +60,7 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
   if (input_device_num >= 0) {  // negative means we're testing
     PmError err = Pm_OpenInput(&input, input_device_num, 0, MIDI_BUFSIZ, 0, 0);
     if (err != 0) {
-      cerr << "error opening PortMidi input stream: " << Pm_GetErrorText(err) << endl;
+      cerr << "error opening PortMidi input stream: " << Pm_GetErrorText(err) << "\n";
       exit(1);
     }
   }
@@ -68,7 +68,7 @@ Kronos::Kronos(byte chan, int input_device_num, int output_device_num)
   if (output_device_num >= 0) {
     PmError err = Pm_OpenOutput(&output, output_device_num, 0, MIDI_BUFSIZ, 0, 0, 0);
     if (err != 0) {
-      cerr << "error opening PortMidi output stream: " << Pm_GetErrorText(err) << endl;
+      cerr << "error opening PortMidi output stream: " << Pm_GetErrorText(err) << "\n";
       exit(1);
     }
   }
@@ -96,13 +96,13 @@ void Kronos::close() {
 // ================ sysex I/O ================
 
 bool Kronos::send_sysex(const byte * const sysex_bytes) {
-  clog << "sending sysex" << endl;
+  clog << "sending sysex\n";
   PmError err = Pm_WriteSysEx(output, 0, (unsigned char *)sysex_bytes);
   if (err != 0) {
-    cerr << "error writing sysex: " << Pm_GetErrorText(err) << endl;
+    cerr << "error writing sysex: " << Pm_GetErrorText(err) << "\n";
     return false;
   }
-  clog << "sysex sent" << endl;
+  clog << "sysex sent\n";
   return true;
 }
 
@@ -118,7 +118,7 @@ bool Kronos::read_sysex(const char * const func_name) {
   PmError err;
 
   state = waiting;
-  clog << "waiting for sysex" << endl;
+  clog << "waiting for sysex\n";
   while (state != received && state != error) {
     if (Pm_Poll(input) == TRUE) {
       int n = Pm_Read(input, buf, SYSEX_BUF_EVENTS);
@@ -139,27 +139,27 @@ bool Kronos::read_sysex(const char * const func_name) {
           if (b == SYSEX) {
             state = receiving;
             start = time(0);
-            clog << "sysex start seen" << endl;
+            clog << "sysex start seen\n";
           }
           else if (b == EOX) {
             state = received;
-            clog << "sysex end seen" << endl;
+            clog << "sysex end seen\n";
           }
         }
       }
     }
     else if (state == waiting && (time(0) - start) >= SYSEX_START_TIMEOUT_SECS) {
-      cerr << "Kronos::" << func_name << ": timeout waiting for sysex" << endl;
+      cerr << "Kronos::" << func_name << ": timeout waiting for sysex\n";
       return false;
     }
     else if (state == receiving && (time(0) - start) >= SYSEX_READ_TIMEOUT_SECS) {
-      cerr << "Kronos::" << func_name << ": timeout waiting for end of sysex" << endl;
+      cerr << "Kronos::" << func_name << ": timeout waiting for end of sysex\n";
       return false;
     }
   }
 
   if (state == error) {
-    cerr << "error receiving sysex: " << Pm_GetErrorText(err) << endl;
+    cerr << "error receiving sysex: " << Pm_GetErrorText(err) << "\n";
     return false;
   }
 
@@ -194,7 +194,7 @@ bool Kronos::get(const byte * const request_sysex, const char * const func_name)
   if (!read_sysex(func_name))
     return false;
   if (error_reply_seen()) {
-    cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << endl;
+    cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << "\n";
     return false;
   }
   return true;
@@ -203,7 +203,7 @@ bool Kronos::get(const byte * const request_sysex, const char * const func_name)
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
   PmError err = Pm_WriteShort(output, 0, Pm_Message(status, data1, data2));
   if (err != 0) {
-    cerr << "error writing channel message: " << Pm_GetErrorText(err) << endl;
+    cerr << "error writing channel message: " << Pm_GetErrorText(err) << "\n";
     exit(1);
   }
 }
@@ -299,7 +299,7 @@ SetList * Kronos::read_current_set_list() {
   if (!read_sysex("read_current_set_list"))
     return 0;
   if (error_reply_seen()) {
-    cerr << "sysex error response: " << error_reply_message() << endl;
+    cerr << "sysex error response: " << error_reply_message() << "\n";
     return 0;
   }
 

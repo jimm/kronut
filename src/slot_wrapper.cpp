@@ -74,7 +74,7 @@ void SlotWrapper::set_performance_type(SlotPerformanceType val) {
 const char * const SlotWrapper::performance_type_name(bool abbreviated) {
   int index = (int)performance_type();
   if (index < 0 || index >= (sizeof(SLOT_PERF_TYPE_NAMES) / sizeof(const char * const))) {
-    cerr << "error: illegal performance type value " << index << endl;
+    cerr << "error: illegal performance type value " << index << "\n";
     exit(1);
   }
   return abbreviated ? SLOT_PERF_TYPE_NAMES_ABBREV[index] : SLOT_PERF_TYPE_NAMES[index];

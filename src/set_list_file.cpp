@@ -34,13 +34,13 @@ void SetListFile::close() {
 void SetListFile::header(int level, char *text) {
   for (int i = 0; i < level; ++i)
     _out << _header_char;
-  _out << ' ' << text << endl << endl;
+  _out << ' ' << text << "\n\n";
 }
 
 void SetListFile::header(int level, string str) {
   for (int i = 0; i < level; ++i)
     _out << _header_char;
-  _out << ' ' << str << endl << endl;
+  _out << ' ' << str << "\n\n";
 }
 
 
@@ -55,19 +55,19 @@ void SetListFile::text(string str) {
 }
 
 void SetListFile::text(KString &kstr) {
-  _out << kstr.str() << endl << endl;
+  _out << kstr.str() << "\n\n";
 }
 
 void SetListFile::puts(char *text) {
   _out << text;
   if (text[strlen(text) - 1] != '\n')
-    _out << endl;
+    _out << "\n";
 }
 
 void SetListFile::puts(string str) {
   _out << str;
   if (str[str.size() - 1] != '\n')
-    _out << endl;
+    _out << "\n";
 }
 
 // ================ writing tables ================
@@ -79,7 +79,7 @@ void SetListFile::table_separator() {
   _out << _table_sep_sep_char;
   for (int i = 0; i < COL2_DATA_WIDTH + 2; ++i)
     _out << '-';
-  _out << '|' << endl;
+  _out << '|' << "\n";
 }
 
 void SetListFile::table_headers(const char * const h1, const char * const h2) {
@@ -91,19 +91,19 @@ void SetListFile::table_headers(const char * const h1, const char * const h2) {
 void SetListFile::table_row(const char * const col1, const char * const col2) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
        << " | " << setw(COL2_DATA_WIDTH) << left << col2
-       << " |" << endl;
+       << " |\n";
 }
 
 void SetListFile::table_row(const char * const col1, const string &col2) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
        << " | " << setw(COL2_DATA_WIDTH) << left << col2
-       << " |" << endl;
+       << " |\n";
 }
 
 void SetListFile::table_row(const char * const col1, int value) {
   _out << "| " << setw(COL1_DATA_WIDTH) << col1
        << " | " << setw(COL2_DATA_WIDTH) << left << value
-       << " |" << endl;
+       << " |\n";
 }
 
 void SetListFile::table_end() {

@@ -64,7 +64,7 @@ void SetListWrapper::set_control_surface_assign_from(string str) {
 const char * const SetListWrapper::control_surface_assign_from_name() {
   int index = (int)control_surface_assign_from();
   if (index < 0 || index >= (sizeof(CONTROL_SURFACE_ASSIGN_FROM_NAMES) / sizeof(const char * const))) {
-    cerr << "error: illegal control surface assign from value " << index << endl;
+    cerr << "error: illegal control surface assign from value " << index << "\n";
     exit(1);
   }
   return CONTROL_SURFACE_ASSIGN_FROM_NAMES[index];

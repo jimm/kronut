@@ -75,7 +75,7 @@ void close_midi() {
 void init_midi() {
   PmError err = Pm_Initialize();
   if (err != 0) {
-    cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << endl;
+    cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << "\n";
     exit(1);
   }
 
@@ -87,7 +87,7 @@ void init_midi() {
 void usage(const char *prog_name) {
   cout << "usage: " << basename((char *)prog_name);
   for (auto line : usage_lines)
-    cout << line << endl;
+    cout << line << "\n";
 }
 
 void parse_command_line(int argc, char * const *argv, struct opts &opts) {
@@ -114,7 +114,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
     case 'c':
       opts.channel = atoi(optarg) - 1; // 0-15
       if (opts.channel < 0 || opts.channel > 15) {
-        cerr << "error: channel must be 1-16" << endl;
+        cerr << "error: channel must be 1-16\n";
         usage(prog_name);
         exit(1);
       }
@@ -131,7 +131,7 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
         opts.format = FILE_EDITOR_FORMAT_HEXDUMP;
         break;
       default:
-        cerr << "error: format must be 'm', 'o', or 'h'" << endl;
+        cerr << "error: format must be 'm', 'o', or 'h'\n";
         usage(prog_name);
         exit(1);
       }
@@ -156,13 +156,13 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
 }
 
 void list_devices(const char * const type_name, bool show_inputs) {
-  cout << type_name << ':' << endl;
+  cout << type_name << ':' << "\n";
   for (int i = 0; i < Pm_CountDevices(); ++i) {
     const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
     if (show_inputs ? (info->input == 1) : (info->output == 1)) {
       const char *name = info->name;
       const char *q = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
-      cout << "  " << setw(2) << i << ": " << q << name << q << endl;
+      cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
     }
   }
 }
@@ -256,12 +256,12 @@ int main(int argc, char * const *argv) {
   if (opts.input_num == -1)
     opts.input_num = find_kronos_input_num();
   if (opts.input_num == -1)
-    cerr << "error: can't find Kronos input port number" << endl;
+    cerr << "error: can't find Kronos input port number\n";
 
   if (opts.output_num == -1)
     opts.output_num = find_kronos_output_num();
   if (opts.output_num == -1)
-    cerr << "error: can't find Kronos output port number" << endl;
+    cerr << "error: can't find Kronos output port number\n";
 
   if (opts.input_num == -1 || opts.output_num == -1) {
     usage(prog_name);
