@@ -2,7 +2,7 @@ NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
 MACOS_VER = 10.9
 CPPFLAGS += -std=c++14 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
-LIBS = -lc -lc++ -lportmidi
+LIBS = -lportmidi
 TESTLIBS = -lCatch2 -lCatch2Main
 LDFLAGS += $(LIBS)
 

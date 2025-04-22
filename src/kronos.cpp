@@ -316,7 +316,7 @@ SetList * Kronos::read_current_set_list() {
 // ================ writing objects ================
 
 void Kronos::write_current_string(int obj_type, KString *kstr) {
-  byte request_sysex[kstr->midi_len + 8];
+  byte *request_sysex = (byte *)malloc(kstr->midi_len + 8);
   const byte request_sysex_header[] = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(obj_type), 0
@@ -326,8 +326,8 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
   memcpy(request_sysex + 7, kstr->midi_bytes, kstr->midi_len);
   request_sysex[7 + kstr->midi_len] = EOX;  // end of sysex
 
-  if (!get(request_sysex, "write_current_string"))
-    return;
+  get(request_sysex, "write_current_string");
+  free(request_sysex);
 }
 
 void Kronos::write_current_slot_name(KString *kstr) {
@@ -354,13 +354,15 @@ bool Kronos::write_set_list(int n, SetList &set_list) {
     0                                          // version
   };
   size_t header_size = sizeof(request_sysex_header);
-  byte request_sysex[header_size + midi_data.midi_len + 1];
+  byte *request_sysex = (byte *)malloc(header_size + midi_data.midi_len + 1);
 
   memcpy(request_sysex, request_sysex_header, header_size); // header
   memcpy(request_sysex + header_size, midi_data.midi_bytes, midi_data.midi_len); // data
   request_sysex[header_size + midi_data.midi_len] = EOX; // end of sysex
 
-  if (!get(request_sysex, "write_current_set_list"))
+  bool got = get(request_sysex, "write_current_set_list");
+  free(request_sysex);
+  if (!got)
     return false;
 
   save_current_set_list();

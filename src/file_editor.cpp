@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include <strstream>
+#include <sstream>
 #include <string.h>
 #include <ctype.h>
 #include <libgen.h>
@@ -189,7 +189,7 @@ int FileEditor::save_set_list_to_file(const char * const path, bool skip_empty_s
 }
 
 void FileEditor::save_set_list_settings_to_file(SetListWrapper &slw) {
-  ostrstream ostr;
+  ostringstream ostr;
 
   _file->table_headers("Setting", "Value");
   _file->table_row("Slots/Page", slw.slots_per_page());

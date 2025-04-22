@@ -1,5 +1,5 @@
 #include <iostream>
-#include <strstream>
+#include <sstream>
 #include <iomanip>
 #include "slot_wrapper.h"
 
@@ -89,7 +89,7 @@ byte SlotWrapper::performance_bank() {
 }
 
 string SlotWrapper::performance_bank_name() {
-  ostrstream ostream;
+  ostringstream ostream;
 
   byte bank = performance_bank();
   if (bank >= 0x11) {
@@ -124,7 +124,7 @@ void SlotWrapper::set_performance_index(byte val) {
 }
 
 string SlotWrapper::performance_name() {
-  ostrstream ostream;
+  ostringstream ostream;
   int index_offset = 0;
 
   // The g* banks and the GM bank start with index 1, not 0, in the UI.
