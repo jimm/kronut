@@ -36,6 +36,7 @@ protected:
   Kronos &kronos;
   string name;
   string comments;
+  string tempfile_path;
 
   bool read_maybe_dump(bool dump);
   void save_to_file();

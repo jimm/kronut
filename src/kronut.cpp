@@ -5,7 +5,7 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <portmidi.h>
+#include <rtmidi/RtMidi.h>
 #include "slot.h"
 #include "kronos.h"
 #include "file_editor.h"
@@ -50,38 +50,22 @@ const char *usage_lines[] = {
   "    help         This help."
 };
 
-int find_kronos_input_num() {
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->input == 1 && strncasecmp("kronos keyboard", info->name, 15) == 0)
+int find_kronos_input_num(RtMidiIn &input) {
+  for (int i = 0; i < input.getPortCount(); ++i) {
+    string name = input.getPortName(i);
+    if (name == "Kronos KEYBOARD")
       return i;
   }
   return -1;
 }
 
-int find_kronos_output_num() {
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (info->output == 1 && strncasecmp("kronos sound", info->name, 12) == 0)
+int find_kronos_output_num(RtMidiOut &output) {
+  for (int i = 0; i < output.getPortCount(); ++i) {
+    string name = output.getPortName(i);
+    if (name == "Kronos SOUND")
       return i;
   }
   return -1;
-}
-
-void close_midi() {
-  Pm_Terminate();
-}
-
-void init_midi() {
-  PmError err = Pm_Initialize();
-  if (err != 0) {
-    cerr << "error initializing PortMidi: " << Pm_GetErrorText(err) << "\n";
-    exit(1);
-  }
-
-  // Pm_Initialize(), when it looks for default devices, can set errno to a
-  // non-zero value. Reinitialize it here.
-  errno = 0;
 }
 
 void usage(const char *prog_name) {
@@ -155,22 +139,21 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   }
 }
 
-void list_devices(const char * const type_name, bool show_inputs) {
-  cout << type_name << ':' << "\n";
-  for (int i = 0; i < Pm_CountDevices(); ++i) {
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-    if (show_inputs ? (info->input == 1) : (info->output == 1)) {
-      const char *name = info->name;
-      const char *q = (name[0] == ' ' || name[strlen(name)-1] == ' ') ? "\"" : "";
-      cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
-    }
-  }
-}
-
 // type is 0 for input, 1 for output
-void list_all_devices() {
-  list_devices("Inputs", true);
-  list_devices("Outputs", false);
+void list_all_devices(RtMidiIn &input, RtMidiOut &output) {
+  cout << "Inputs:\n";
+  for (int i = 0; i < input.getPortCount(); ++i) {
+    string name = input.getPortName(i);
+    const char *q = (name[0] == ' ' || name[name.length()-1] == ' ') ? "\"" : "";
+    cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
+  }
+
+  cout << "Outputs:\n";
+  for (int i = 0; i < output.getPortCount(); ++i) {
+    string name = output.getPortName(i);
+    const char *q = (name[0] == ' ' || name[name.length()-1] == ' ') ? "\"" : "";
+    cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
+  }
 }
 
 void run_text_editor(Kronos &k) {
@@ -234,6 +217,10 @@ int main(int argc, char * const *argv) {
   argc -= optind;
   argv += optind;
 
+  RtMidiIn input;
+  RtMidiOut output;
+  input.ignoreTypes(false, true, true); /* do not ignore sysex */
+
   if (argc == 0) {
     usage(prog_name);
     exit(1);
@@ -243,7 +230,7 @@ int main(int argc, char * const *argv) {
     exit(0);
   }
   if (strncmp(argv[0], "li", 2) == 0) {
-    list_all_devices();
+    list_all_devices(input, output);
     exit(0);
   }
 
@@ -252,14 +239,14 @@ int main(int argc, char * const *argv) {
     clog.rdbuf(nullptr);
   }
 
-  // Ensure we have input and output device numbers for the Kronos
+  // Ensure we have input and output ports for the Kronos
   if (opts.input_num == -1)
-    opts.input_num = find_kronos_input_num();
+    opts.input_num = find_kronos_input_num(input);
   if (opts.input_num == -1)
     cerr << "error: can't find Kronos input port number\n";
 
   if (opts.output_num == -1)
-    opts.output_num = find_kronos_output_num();
+    opts.output_num = find_kronos_output_num(output);
   if (opts.output_num == -1)
     cerr << "error: can't find Kronos output port number\n";
 
@@ -277,10 +264,10 @@ int main(int argc, char * const *argv) {
     exit(1);
   }
 
-  init_midi();
-
   int status = 0;
-  Kronos kronos(opts.channel, opts.input_num, opts.output_num);
+  input.openPort(opts.input_num);
+  output.openPort(opts.output_num);
+  Kronos kronos(opts.channel, input, output);
   FileEditor file_editor(opts.format);
 
   switch (command) {
@@ -301,7 +288,6 @@ int main(int argc, char * const *argv) {
   }
 
   kronos.close();
-  close_midi();
   exit(status);
   return status;
 }

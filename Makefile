@@ -2,7 +2,7 @@ NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
 MACOS_VER = 10.9
 CPPFLAGS += -std=c++14 -mmacosx-version-min=$(MACOS_VER) -MD -MP -g $(DEBUG)
-LIBS = -lportmidi
+LIBS = -lrtmidi
 TESTLIBS = -lCatch2 -lCatch2Main
 LDFLAGS += $(LIBS)
 
@@ -22,11 +22,17 @@ CATCH_CATEGORY ?= ""
 
 all: $(NAME)
 
-$(NAME): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^
+%.d: %.cpp
+	@set -e; rm -f $@; \
+	 $(CXX) -MM $(CPPFLAGS) $< > $@.$$$$; \
+	 sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	 rm -f $@.$$$$
 
--include $(C_SRC:%.c=%.d)
--include $(CPP_SRC:%.cpp=%.d)
+include $(SRC:.cpp=.d)
+
+$(NAME): $(OBJS)
+	echo $(CXX)
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 test: $(NAME)_test
 	./$(NAME)_test --colour-mode none $(CATCH_CATEGORY)

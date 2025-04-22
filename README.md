@@ -15,11 +15,16 @@ you can't move slots around using Kronut.
 To get Kronut, you'll need to download the
 [source code](https://github.com/jimm/kronut) and compile it.
 
-You'll also need to install the http://portmedia.sourceforge.net/portmidi/
-library and headers. If you use [Homebrew](https://brew.sh/) then you can
-install it via `brew install portmidi`.
+You'll also need to install the
+[RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) library and headers. If
+you use [Homebrew](https://brew.sh/) then you can install it via `brew
+install rtmidi`.
 
-To compile the code, run `make`.
+To compile the code, run `make`. You might need to make sure that the RtMidi
+include and library directories are accessable in `LDFLAGS` and `CPPFLAGS`.
+If you installed RtMidi via `brew` you can run the command `brew config` and
+find `HOMEBREW_PREFIX` which will be the parent directory of the `include`
+and `lib` directories.
 
 To compile and run the tests, you'll need to install
 [Catch2](https://github.com/catchorg/Catch2). The easiest way to do that is
@@ -184,10 +189,11 @@ editor. When you are done editing the name and comment, save your changes
 and quit your editor. Kronut then sends what you've edited back to the same
 set list slot.
 
-You specify the editor program to run by defining the `$VISUAL` or `$EDITOR`
-environment variables. If neither of those are defined, `vi` is used. If the
-environment variable `$KRONUT_VISUAL_OPTIONS` is defined it will be passed
-to the editor command.
+You specify the editor program to run by defining the `$KRONUT_TEXT_EDITOR`,
+`$VISUAL`, or `$EDITOR` environment variables, which are tried in that
+order. If none of those are defined, `vi` is used. Each has a
+corresponding `KRONUT_{TEXT_EDITOR,VISUAL,EDITOR,VI}_OPTIONS` environment
+variable that is passed to the editor command.
 
 The slot name must be a single line after the "# Slot Name" Markdown header.
 Names longer than 24 characters will be truncated to fit.
@@ -211,11 +217,12 @@ set list on the Kronos.
 
 ## A Note For Emacs Users
 
-If you're using the Emacs `emacsclient` utility (like I do), you'll need to
-call `server-edit` (`C-x #`) after saving the buffer to tell `emacsclient`
-that you're done editing the file. Sometimes I'd like to cancel the edit,
-but I don't know of a built-in way to tell `emacsclient` to exit without
-saving the buffer first. So I wrote this function:
+If you're using the Emacs `emacsclient` command as your editor (like I do),
+make sure you call it without the `-n/--no-wait` option. Also, you'll need
+to call `server-edit` (`C-x #`) after saving the buffer to tell
+`emacsclient` that you're done editing the file. Sometimes I'd like to
+cancel the edit, but I don't know of a built-in way to tell `emacsclient` to
+exit without saving the buffer first. So I wrote this function:
 
 ```lisp
 ;;
