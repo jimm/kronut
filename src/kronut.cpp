@@ -209,6 +209,11 @@ void run_text_editor(Kronos &k) {
   }
 }
 
+void midi_message_listener(double _time_stamp, vector<byte> *message, void *user_data) {
+  Kronos *kronos = (Kronos *)user_data;
+  kronos->receive_midi(message);
+}
+
 int main(int argc, char * const *argv) {
   struct opts opts;
   const char *prog_name = argv[0];
@@ -269,6 +274,8 @@ int main(int argc, char * const *argv) {
   output.openPort(opts.output_num);
   Kronos kronos(opts.channel, input, output);
   FileEditor file_editor(opts.format);
+
+  input.setCallback(midi_message_listener, (void *)&kronos);
 
   switch (command) {
   case 'l':

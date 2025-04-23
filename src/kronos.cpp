@@ -11,6 +11,8 @@
 #include "set_list.h"
 #include "utils.h"
 
+#define UNDEFINED (-1)
+
 #define SYSEX_HEADER SYSEX, KORG_MANUFACTURER_ID, static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID
 
 #define SLEEP_MICROSECONDS 10000 // 10 milliseconds in microseconds
@@ -44,7 +46,7 @@ Kronos *Kronos_instance() {
 
 // chan must be 0-15
 Kronos::Kronos(byte chan, RtMidiIn &input_port, RtMidiOut &output_port)
-  : channel(chan), input(input_port), output(output_port)
+  : channel(chan), input(input_port), output(output_port), waiting_for_sysex_function(UNDEFINED)
 {
   kronos_instance = this;
 }
@@ -68,29 +70,32 @@ bool Kronos::send_sysex(vector<byte> &sysex_bytes) {
   return true;
 }
 
-// Wait for next Kronos sysex message that matches `reply_function` to be
-// read into `sysex`.
+// Copies incoming MIDI message to sysex if it's what we're looking for.
+void Kronos::receive_midi(vector<byte> *message) {
+  if (message_is_wanted(message))
+    sysex = *message;
+}
+
+// Poll, waiting for next Kronos sysex message that matches `reply_function`
+// to be read into `sysex`.
 bool Kronos::read_sysex(const char * const func_name, byte reply_function) {
   clog << "reading sysex, waiting for reply func "
        << setw(2) << setfill('0') << hex << (int)reply_function
        << "\n";
   sysex.clear();
+  waiting_for_sysex_function = reply_function; // tells callback to copy these
   time_t start = time(0);
   while (true) {
-    input.getMessage(&sysex);
-    // ignore all but the expected sysex reply
-    if (sysex.size() > 0 && sysex[0] == SYSEX && sysex[4] == reply_function)
+    if (message_is_wanted(&sysex))
       break;
-    if (sysex.size() > 0 && sysex[0] == SYSEX)
-      clog << "ignoring input sysex func "
-       << setw(2) << setfill('0') << hex << (int)sysex[4]
-       << "\n";
     usleep(SLEEP_MICROSECONDS);
     if ((time(0) - start) >= SYSEX_START_TIMEOUT_SECS) {
       cerr << "Kronos::" << func_name << ": timeout waiting for sysex\n";
+      waiting_for_sysex_function = UNDEFINED;
       return false;
     }
   }
+  waiting_for_sysex_function = UNDEFINED;
   return true;
 }
 

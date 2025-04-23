@@ -6,7 +6,6 @@
 #include "set_list.h"
 #include "midi_data.h"
 #include "kstring.h"
-// #include "byte_data.h"
 
 using namespace std;
 
@@ -29,6 +28,15 @@ public:
   ~Kronos();
 
   void close();
+
+  // Callback that receives MIDI messages.
+  void receive_midi(vector<byte> *message);
+
+  bool message_is_wanted(vector<byte> *message) {
+    return message->size() > 0
+      && message->at(0) == SYSEX
+      && message->at(4) == waiting_for_sysex_function;
+  }
 
   // For text editing via TextEditor
   SetList * read_current_set_list();
@@ -57,6 +65,7 @@ protected:
   RtMidiIn &input;
   RtMidiOut &output;
   byte channel;
+  byte waiting_for_sysex_function;
   vector<byte> sysex;
 
   virtual bool send_sysex(vector<byte> &sysex);

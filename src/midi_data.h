@@ -1,4 +1,5 @@
 #ifndef MIDI_DATA_H
+
 #define MIDI_DATA_H
 
 #include <stdlib.h>

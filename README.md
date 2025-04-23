@@ -249,7 +249,10 @@ Kronut can't save it or let you adjust it.
 
 # To Do
 
-- Find out where slot MIDI track is stored in the slot struct. It's only for songs.
+- Fix tests for RtMidi
+
+- Find out where slot MIDI track is stored in the slot struct. It's only for
+  songs.
 
 - Set list control surface mode: figure out values (and bit range in struct)
   so they can be presented as text instead of a number.
