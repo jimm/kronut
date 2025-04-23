@@ -272,7 +272,7 @@ int main(int argc, char * const *argv) {
   int status = 0;
   input.openPort(opts.input_num);
   output.openPort(opts.output_num);
-  Kronos kronos(opts.channel, input, output);
+  Kronos kronos(opts.channel, &output);
   FileEditor file_editor(opts.format);
 
   input.setCallback(midi_message_listener, (void *)&kronos);

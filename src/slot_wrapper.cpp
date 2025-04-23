@@ -99,19 +99,19 @@ string SlotWrapper::performance_bank_name() {
       ostream << (char)('A' + bank - 0x18);
     }
     else
-      ostream << (char)('A' + bank - 0x11) << std::ends;
+      ostream << (char)('A' + bank - 0x11);
     return ostream.str();
   }
   if (bank == 0x10)
     return "g(d)";
   if (bank >= 0x07) {
-    ostream << "g(" << (int)(bank - 0x07 + 1) << ')' << std::ends;
+    ostream << "g(" << (int)(bank - 0x07 + 1) << ')';
     return ostream.str();
   }
   if (bank == 0x06)
     return "GM";
 
-  ostream << "INT-" << (char)('A' + (int)bank) << std::ends;
+  ostream << "INT-" << (char)('A' + (int)bank);
   return ostream.str();
 }
 
@@ -132,8 +132,7 @@ string SlotWrapper::performance_name() {
     index_offset = 1;
 
   ostream << performance_type_name(true) << ' ' << performance_bank_name() << ' '
-          << std::setfill('0') << std::setw(3) << (performance_index() + index_offset)
-          << std::ends;
+          << std::setfill('0') << std::setw(3) << (performance_index() + index_offset);
   return ostream.str();
 }
 

@@ -24,7 +24,7 @@ enum KronosMode {
 class Kronos {
 public:
 
-  Kronos(byte channel, RtMidiIn &input_port, RtMidiOut &output_port);
+  Kronos(byte channel, RtMidiOut *output_port);
   ~Kronos();
 
   void close();
@@ -62,8 +62,7 @@ public:
   void dump_sysex(const char * const msg);
 
 protected:
-  RtMidiIn &input;
-  RtMidiOut &output;
+  RtMidiOut *output;
   byte channel;
   byte waiting_for_sysex_function;
   vector<byte> sysex;

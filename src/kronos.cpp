@@ -45,8 +45,8 @@ Kronos *Kronos_instance() {
 // ================ allocation ================
 
 // chan must be 0-15
-Kronos::Kronos(byte chan, RtMidiIn &input_port, RtMidiOut &output_port)
-  : channel(chan), input(input_port), output(output_port), waiting_for_sysex_function(UNDEFINED)
+Kronos::Kronos(byte chan, RtMidiOut *output_port)
+  : channel(chan), output(output_port), waiting_for_sysex_function(UNDEFINED)
 {
   kronos_instance = this;
 }
@@ -66,7 +66,8 @@ bool Kronos::send_sysex(vector<byte> &sysex_bytes) {
   clog << "sending sysex, func "
        << setw(2) << setfill('0') << hex << (int)sysex_bytes[4]
        << "\n";
-  output.sendMessage(&sysex_bytes);
+  if (output != nullptr)        // only null during testing
+    output->sendMessage(&sysex_bytes);
   return true;
 }
 
@@ -116,13 +117,14 @@ void Kronos::send_channel_message(byte status, byte data1, byte data2) {
   message.push_back(status);
   message.push_back(data1);
   message.push_back(data2);
-  output.sendMessage(&message);
+  if (output != nullptr)        // only null during testing
+    output->sendMessage(&message);
 }
 
 // ================ error detection ================
 
 bool Kronos::error_reply_seen() {
-  return sysex[4] == FUNC_CODE_REPLY && sysex[5] > 0;
+  return sysex.size() > 0 && sysex[0] == SYSEX && sysex[4] == FUNC_CODE_REPLY && sysex[5] > 0;
 }
 
 const char * const Kronos::error_reply_message() {

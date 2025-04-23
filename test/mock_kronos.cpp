@@ -21,7 +21,7 @@ MockKronos *MockKronos_instance() {
 // ================ allocation ================
 
 // channel 1-15
-MockKronos::MockKronos(byte chan) : Kronos(chan, -1, -1), name(""), comments("") {
+MockKronos::MockKronos(byte chan) : Kronos(chan, nullptr), name(""), comments("") {
   mock_kronos_instance = this;
 }
 

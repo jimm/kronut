@@ -13,7 +13,7 @@ public:
   string name;
   string comments;
 
-  MockKronos(byte channel);
+  MockKronos(byte channel);     // channel 1-15
   ~MockKronos();
 
   void receive_midi() {}
