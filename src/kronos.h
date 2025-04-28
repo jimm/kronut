@@ -32,11 +32,7 @@ public:
   // Callback that receives MIDI messages.
   void receive_midi(vector<byte> *message);
 
-  bool message_is_wanted(vector<byte> *message) {
-    return message->size() > 0
-      && message->at(0) == SYSEX
-      && message->at(4) == waiting_for_sysex_function;
-  }
+  bool message_is_wanted(vector<byte> *message);
 
   // For text editing via TextEditor
   SetList * read_current_set_list();

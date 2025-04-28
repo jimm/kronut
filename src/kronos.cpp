@@ -71,6 +71,13 @@ bool Kronos::send_sysex(vector<byte> &sysex_bytes) {
   return true;
 }
 
+bool Kronos::message_is_wanted(vector<byte> *message) {
+  return message->size() > 0
+    && message->at(0) == SYSEX
+    && (message->at(4) == waiting_for_sysex_function || message->at(4) == FUNC_CODE_REPLY);
+}
+
+
 // Copies incoming MIDI message to sysex if it's what we're looking for.
 void Kronos::receive_midi(vector<byte> *message) {
   if (message_is_wanted(message))
