@@ -63,7 +63,7 @@ protected:
   byte waiting_for_sysex_function;
   vector<byte> sysex;
 
-  virtual bool send_sysex(vector<byte> &sysex);
+  virtual bool send_sysex(const char * const func_name, vector<byte> &sysex);
   virtual bool read_sysex(const char * const func_name, byte reply_function);
   virtual bool get(vector<byte> &request_sysex, const char * const func_name, byte reply_function);
   virtual void send_channel_message(byte status, byte data1, byte data2);

@@ -11,7 +11,7 @@
 
 class TextEditor {
 public:
-  TextEditor(Kronos &k);
+  TextEditor(Kronos &k, int set_list_num);
 
   // Reads current slot's name and comment, saves to temp file, opens
   // editor. When editor returns, reads temp file and writes current slot.
@@ -34,6 +34,7 @@ public:
 
 protected:
   Kronos &kronos;
+  int set_list_num;
   string name;
   string comments;
   string tempfile_path;

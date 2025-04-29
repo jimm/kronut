@@ -45,7 +45,7 @@ const char *usage_lines[] = {
   "",
   "    save N FILE  Saves set list N into a file.",
   "",
-  "    edit         Starts the slot text editor. See the README.",
+  "    edit N       Starts the slot text editor for set list N. See the README.",
   "",
   "    help         This help."
 };
@@ -156,12 +156,11 @@ void list_all_devices(RtMidiIn &input, RtMidiOut &output) {
   }
 }
 
-void run_text_editor(Kronos &k) {
-  TextEditor text_editor(k);
+void run_text_editor(Kronos &k, int set_list_num) {
+  TextEditor text_editor(k, set_list_num);
   char buf[32];
 
   puts("Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.");
-  puts("Kronut can't save the set list itself. Remember to do that.");
   while (true) {
     printf("kronut> ");
     fflush(stdout);
@@ -262,9 +261,12 @@ int main(int argc, char * const *argv) {
 
   char command = argv[0][0];
 
-  // load and save commands take two args: a number and a file path
-  if ((command == 'l' || command == 's') &&
-      (argc < 3 || !isdigit(argv[1][0]))) {
+  // some commands take one or two args
+  if (((command == 'l' || command == 's') &&
+       (argc < 3 || !isdigit(argv[1][0])))
+      || (command == 'e' && (argc < 2 || !isdigit(argv[1][0]))))
+  {
+    cerr << "command = " << command << ", argc = " << argc << "\n"; // DEBUG
     usage(prog_name);
     exit(1);
   }
@@ -287,7 +289,7 @@ int main(int argc, char * const *argv) {
       file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
     break;
   case 'e':
-    run_text_editor(kronos);
+    run_text_editor(kronos, atoi(argv[1]));
     break;
   default:
     usage(prog_name);

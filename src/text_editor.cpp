@@ -7,7 +7,10 @@
 #define TEXT_EDITOR_NAME 0
 #define TEXT_EDITOR_COMMENTS 1
 
-TextEditor::TextEditor(Kronos &k) : kronos(k), name(""), comments("") {
+TextEditor::TextEditor(Kronos &k, int set_list_num)
+  : kronos(k), name(""), comments("")
+{
+  kronos.goto_set_list(set_list_num);
 }
 
 int TextEditor::edit_current_slot(bool read_from_kronos) {
@@ -169,4 +172,7 @@ void TextEditor::write_slot() {
   delete kstr;
   if (kronos.error_reply_seen()) // error already printed
     return;
+
+  clog << "write_slot saving current set list\n";
+  kronos.save_current_set_list();
 }

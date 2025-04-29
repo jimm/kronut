@@ -164,12 +164,12 @@ and name and tells you if the name, comment, or both were too long.
 
 # Editing Slot Names and Comments
 
-The "edit" command will start a simple text-only program that prompts you
-for one-letter commands, like this:
+The "edit" command lets you edit the names and comments of the slots in a
+set list. Kronut will open the selected set list and prompts you for
+one-letter commands, like this:
 
 ```
 Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.
-Kronut can't save the set list itself. Remember to do that.
 kronut> h
   e: edit current slot
   r: re-edit (does not get data from Kronos)
@@ -183,11 +183,11 @@ kronut> q
 $ 
 ```
 
-%yping `e` and hitting return will download the name and comment of the
-currently selected set list slot into a Markdown file and open it using your
-editor. When you are done editing the name and comment, save your changes
-and quit your editor. Kronut then sends what you've edited back to the same
-set list slot.
+Typing `e` and hitting return will download the name and comment of the
+currently selected set list slot into a Markdown (or Org mode) file and open
+it using your editor. When you are done editing the name and comment, save
+your changes and quit your editor. Kronut then sends what you've edited back
+to the same set list slot and tells the Kronos to save the set list.
 
 You specify the editor program to run by defining the `$KRONUT_TEXT_EDITOR`,
 `$VISUAL`, or `$EDITOR` environment variables, which are tried in that
@@ -195,25 +195,21 @@ order. If none of those are defined, `vi` is used. Each has a
 corresponding `KRONUT_{TEXT_EDITOR,VISUAL,EDITOR,VI}_OPTIONS` environment
 variable that is passed to the editor command.
 
-The slot name must be a single line after the "# Slot Name" Markdown header.
-Names longer than 24 characters will be truncated to fit.
+The slot name must be a single line after the "# Slot Name" Markdown (or "*
+Slot Name" Org mode) header. Names longer than 24 characters will be
+truncated to fit.
 
-The comments must start after the "# Comments" Markdown header. The comment
-will be truncated after 512 characters.
+The comments must start after the "# Comments" Markdown header ("* Comments"
+in Org mode). The comment will be truncated after 512 characters.
 
 ## Too-Long Name or Comments
 
 Whenever a slot name or comment you enter too long, it is truncated before
 it is sent to the Kronos. When that happens, Kronut tells you and gives you
-a chance to re-open your editor with the longer data that you saved using
-the `r` command. That way, if you want to re-edit the slot you'll have all
-that lovely text you added that was truncated.
-
-## Warnings
-
-In "edit" mode, Kronut doesn't know how to tell the Kronos save the set list
-itself. After you've changed one or more slots, you must manually save the
-set list on the Kronos.
+a chance to re-open your editor using the `r` command. It will open your
+editor with the longer data that you last saved so you can make it fit. That
+way, if you want to re-edit the slot you'll have all that lovely text you
+added that was truncated.
 
 ## A Note For Emacs Users
 
@@ -249,7 +245,8 @@ Kronut can't save it or let you adjust it.
 
 # To Do
 
-- Fix tests for RtMidi
+- Require set list number when starting in edit mode. After each edit, save
+  the set list on the Kronos.
 
 - Find out where slot MIDI track is stored in the slot struct. It's only for
   songs.
