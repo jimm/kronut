@@ -25,7 +25,7 @@ class Kronos {
 public:
 
   Kronos(byte channel, RtMidiOut *output_port);
-  ~Kronos();
+  virtual ~Kronos();
 
   void close();
 

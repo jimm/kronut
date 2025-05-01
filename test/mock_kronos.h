@@ -14,20 +14,23 @@ public:
   string comments;
 
   MockKronos(byte channel);     // channel 1-15
-  ~MockKronos();
+  virtual ~MockKronos();
 
   void receive_midi() {}
-  void write_current_slot_name(KString *kstr) { name = kstr->str(); }
-  void write_current_slot_comments(KString *kstr) { comments = kstr->str(); }
+  void write_current_slot_name(KString *kstr) override { name = kstr->str(); }
+  void write_current_slot_comments(KString *kstr) override { comments = kstr->str(); }
 
 protected:
-  bool send_sysex(const char * const func_name, const byte * const sysex) { return true; }
-  bool read_sysex() { return true; }
-  bool get(const byte * const, const char * const) { return true; }
-  void send_channel_message(byte, byte, byte) {}
+  bool send_sysex(const char * const func_name, vector<byte> &sysex) override
+    { return true; }
+  bool read_sysex(const char * const func_name, byte reply_function) override
+    { return true; }
+  bool get(vector<byte> &request_sysex, const char * const func_name, byte reply_function) override
+    { return true; }
+  void send_channel_message(byte, byte, byte) override {}
 
-  KString * read_current_string(int obj_type, byte pad);
-  void write_current_string(int obj_type, KString *kstr) {}
+  KString * read_current_string(int obj_type, byte pad) override;
+  void write_current_string(int obj_type, KString *kstr) override {}
 };
 
 #endif /* MOCK_KRONOS_H */

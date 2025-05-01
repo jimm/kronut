@@ -19,9 +19,7 @@ int TextEditor::edit_current_slot(bool read_from_kronos) {
       return TEXT_EDITOR_ERROR;
 
   save_to_file();
-  clog << "calling edit_file\n";
   int status = edit_file();
-  clog << "back from edit_file, status = " << status << "\n";
   if (status == 0) {
     load_from_file();
     remove(TEXT_EDITOR_TMPFILE);
@@ -157,7 +155,6 @@ string TextEditor::trimmed(string s) {
 void TextEditor::write_slot() {
   KString *kstr;
 
-  clog << "write_slot sending slot name\n";
   kstr = new KString(MD_INIT_INTERNAL, (byte *)name.c_str(),
                      SLOT_NAME_LEN, 0);
   kronos.write_current_slot_name(kstr);
@@ -165,7 +162,6 @@ void TextEditor::write_slot() {
   if (kronos.error_reply_seen()) // error already printed
     return;
 
-  clog << "write_slot sending comment\n";
   kstr = new KString(MD_INIT_INTERNAL, (byte *)comments.c_str(),
                      SLOT_COMMENTS_LEN, 0);
   kronos.write_current_slot_comments(kstr);
@@ -173,6 +169,5 @@ void TextEditor::write_slot() {
   if (kronos.error_reply_seen()) // error already printed
     return;
 
-  clog << "write_slot saving current set list\n";
   kronos.save_current_set_list();
 }

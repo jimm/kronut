@@ -139,21 +139,18 @@ void parse_command_line(int argc, char * const *argv, struct opts &opts) {
   }
 }
 
-// type is 0 for input, 1 for output
-void list_all_devices(RtMidiIn &input, RtMidiOut &output) {
-  cout << "Inputs:\n";
-  for (int i = 0; i < input.getPortCount(); ++i) {
-    string name = input.getPortName(i);
+void list_devices(const char *title, RtMidi &io) {
+  cout << title << ":\n";
+  for (int i = 0; i < io.getPortCount(); ++i) {
+    string name = io.getPortName(i);
     const char *q = (name[0] == ' ' || name[name.length()-1] == ' ') ? "\"" : "";
     cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
   }
+}
 
-  cout << "Outputs:\n";
-  for (int i = 0; i < output.getPortCount(); ++i) {
-    string name = output.getPortName(i);
-    const char *q = (name[0] == ' ' || name[name.length()-1] == ' ') ? "\"" : "";
-    cout << "  " << setw(2) << i << ": " << q << name << q << "\n";
-  }
+void list_all_devices(RtMidiIn &input, RtMidiOut &output) {
+  list_devices("Inputs", input);
+  list_devices("Outputs", output);
 }
 
 void run_text_editor(Kronos &k, int set_list_num) {
