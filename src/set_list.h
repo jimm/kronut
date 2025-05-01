@@ -7,6 +7,7 @@
 // value.
 #define UNINITIALIZED_SET_LIST 0xff
 #define SET_LIST_NAME_LEN 24
+#define UNDEFINED_SET_LIST_NUM (-1)
 
 using namespace std;
 

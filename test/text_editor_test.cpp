@@ -15,7 +15,7 @@ class TestEditor : public TextEditor {
 public:
   string saved_text;
 
-  TestEditor(MockKronos &k) : TextEditor(k, 0) {
+  TestEditor(MockKronos &k) : TextEditor(k) {
     saved_text = "Slot Name\n\nSlot Comments\nAnd another line\n";
   }
 

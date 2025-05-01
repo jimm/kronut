@@ -40,12 +40,11 @@ const char *usage_lines[] = {
   "    list         Lists all input and output MIDI devices.",
   "",
   "    load N FILE  Reads a file into the set list N.",
-  "                 Remember: kronut does not save the set list; you",
-  "                 must do that yourself on the Kronos.",
   "",
   "    save N FILE  Saves set list N into a file.",
   "",
-  "    edit N       Starts the slot text editor for set list N. See the README.",
+  "    edit [N]     Starts the slot text editor, optionally moving to set list N",
+  "                 first. See the README for more information.",
   "",
   "    help         This help."
 };
@@ -154,8 +153,11 @@ void list_all_devices(RtMidiIn &input, RtMidiOut &output) {
 }
 
 void run_text_editor(Kronos &k, int set_list_num) {
-  TextEditor text_editor(k, set_list_num);
+  TextEditor text_editor(k);
   char buf[32];
+
+  if (set_list_num != UNDEFINED_SET_LIST_NUM)
+    k.goto_set_list(set_list_num);
 
   puts("Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.");
   while (true) {
@@ -258,12 +260,13 @@ int main(int argc, char * const *argv) {
 
   char command = argv[0][0];
 
-  // some commands take one or two args
-  if (((command == 'l' || command == 's') &&
-       (argc < 3 || !isdigit(argv[1][0])))
-      || (command == 'e' && (argc < 2 || !isdigit(argv[1][0]))))
-  {
-    cerr << "command = " << command << ", argc = " << argc << "\n"; // DEBUG
+  // some commands take a required numeric arg and file name arg
+  if ((command == 'l' || command == 's') && (argc < 3 || !isdigit(argv[1][0]))) {
+    usage(prog_name);
+    exit(1);
+  }
+  // some commands take an optional numeric arg
+  if (command == 'e' && argc >= 2 && !isdigit(argv[1][0])) {
     usage(prog_name);
     exit(1);
   }
@@ -286,7 +289,7 @@ int main(int argc, char * const *argv) {
       file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
     break;
   case 'e':
-    run_text_editor(kronos, atoi(argv[1]));
+    run_text_editor(kronos, argc >= 2 ? atoi(argv[1]) : UNDEFINED_SET_LIST_NUM);
     break;
   default:
     usage(prog_name);

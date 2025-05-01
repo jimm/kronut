@@ -165,8 +165,8 @@ and name and tells you if the name, comment, or both were too long.
 # Editing Slot Names and Comments
 
 The "edit" command lets you edit the names and comments of the slots in a
-set list. Kronut will open the selected set list and prompts you for
-one-letter commands, like this:
+set list. Kronut will, if you specify a set list number, move to that set
+list. It will then prompt you for one-letter commands, like this:
 
 ```
 Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.
@@ -186,7 +186,8 @@ $
 Typing `e` and hitting return will download the name and comment of the
 currently selected set list slot into a Markdown (or Org mode) file and open
 it using your editor. When you are done editing the name and comment, save
-your changes and quit your editor. Kronut then sends what you've edited back
+your changes and quit your editor (or, if you're using Emacs, save it using
+`server-edit` (`C-x #`)). Kronut then sends what you've edited back
 to the same set list slot and tells the Kronos to save the set list.
 
 You specify the editor program to run by defining the `$KRONUT_TEXT_EDITOR`,

@@ -7,10 +7,9 @@
 #define TEXT_EDITOR_NAME 0
 #define TEXT_EDITOR_COMMENTS 1
 
-TextEditor::TextEditor(Kronos &k, int set_list_num)
+TextEditor::TextEditor(Kronos &k)
   : kronos(k), name(""), comments("")
 {
-  kronos.goto_set_list(set_list_num);
 }
 
 int TextEditor::edit_current_slot(bool read_from_kronos) {
