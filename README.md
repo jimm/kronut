@@ -212,31 +212,13 @@ editor with the longer data that you last saved so you can make it fit. That
 way, if you want to re-edit the slot you'll have all that lovely text you
 added that was truncated.
 
-## A Note For Emacs Users
+## A Note for Emacs Users
 
 If you're using the Emacs `emacsclient` command as your editor (like I do),
 make sure you call it without the `-n/--no-wait` option. Also, you'll need
 to call `server-edit` (`C-x #`) after saving the buffer to tell
-`emacsclient` that you're done editing the file. Sometimes I'd like to
-cancel the edit, but I don't know of a built-in way to tell `emacsclient` to
-exit without saving the buffer first. So I wrote this function:
-
-```lisp
-;;
-;; When editing emacsclient buffer, use this to send a non-zero status back
-;; to emacsclient.
-;;
-;; https://superuser.com/questions/295156/how-to-set-the-exit-status-for-emacsclient/542916
-;;
-(defun buffer-kill-emacsclients ()
-  "Sends error exit command to every client for the current buffer."
-  (interactive)
-  (dolist (proc server-buffer-clients)
-    (server-send-string proc "-error killed by buffer-kill-emacs")))
-```
-
-When this function is called, Kronut will print the error message "killed by
-buffer-kill-emacs" and nothing will get sent to the Kronos.
+`emacsclient` that you're done editing the file. To cancel the edit, call
+`server-edit-abort`.
 
 # Random Notes
 
