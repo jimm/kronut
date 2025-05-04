@@ -15,9 +15,9 @@
 
 #define SYSEX_HEADER SYSEX, KORG_MANUFACTURER_ID, static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID
 
-#define SLEEP_MICROSECONDS 10000 // 10 milliseconds in microseconds
 #define SYSEX_START_TIMEOUT_SECS 5
-#define TIMEOUT_ERROR_REPLY 100
+#define SLEEP_MICROSECONDS 10000 // 10 milliseconds in microseconds
+#define UNKNOWN_ERROR_BUFFER_LEN 128
 
 static Kronos *kronos_instance;
 
@@ -32,11 +32,11 @@ static const char * const error_reply_messages[] = {
   "(internal error code)",
   "other error: program bank is wrong type for received program dump (Func 73, 75); invalid data in Preset Pattern Dump (Func 7B).",
   "target object is protected",
-  "memory overflow",
-  "(unknown error code)",
-  // The following errors are kronut errors, not Kronos errors
-  "timeout"
+  "memory overflow"
 };
+static char unknown_error_buf[UNKNOWN_ERROR_BUFFER_LEN];
+
+#define ERROR_REPLY_BUFFER_INDEX 13
 
 Kronos *Kronos_instance() {
   return kronos_instance;
@@ -72,6 +72,10 @@ bool Kronos::send_sysex(const char * const func_name, vector<byte> &sysex_bytes)
 }
 
 bool Kronos::message_is_wanted(vector<byte> *message) {
+  // DEBUG
+  if (message->size() > 0 && message->at(0) == SYSEX && message->at(4) == FUNC_CODE_REPLY)
+      cerr << "sysex error response: " << error_reply_message() << "\n";
+
   return message->size() > 0
     && message->at(0) == SYSEX
     && (message->at(4) == waiting_for_sysex_function || message->at(4) == FUNC_CODE_REPLY);
@@ -141,7 +145,9 @@ bool Kronos::error_reply_seen() {
 
 const char * const Kronos::error_reply_message() {
   int error_index;
-  switch (sysex[5]) {
+  int error_code = (int)sysex[5];
+
+  switch (error_code) {
   case 0: error_index = 0; break;
   case 1: error_index = 1; break;
   case 2: error_index = 2; break;
@@ -150,13 +156,14 @@ const char * const Kronos::error_reply_message() {
   case 5: error_index = 5; break;
   case 6: error_index = 6; break;
   case 7: error_index = 7; break;
-  case 64: error_index = 8; break;
-  case 65: error_index = 9; break;
-  case 66: error_index = 10; break;
-  // Kronut errors
-  case TIMEOUT_ERROR_REPLY: error_index = 12; break;
+  case 0x64: error_index = 8; break;
+  case 0x65: error_index = 9; break;
+  case 0x66: error_index = 10; break;
   // anything else
-  default: error_index = 11; break;
+  default:
+    snprintf(unknown_error_buf, UNKNOWN_ERROR_BUFFER_LEN,
+             "unknown error reply code: %02x", error_code);
+    return unknown_error_buf;
   }
   return error_reply_messages[error_index];
 }
@@ -257,6 +264,10 @@ void Kronos::write_current_slot_name(KString *kstr) {
 }
 
 void Kronos::write_current_slot_comments(KString *kstr) {
+  // DEBUG
+  cerr << "writing comment:\n";
+  cerr << kstr->str() << "\n";
+
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
