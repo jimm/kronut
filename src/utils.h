@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#define HEXPRINT(width, val) setw(width) << setfill('0') << hex << (int(val))
+
 typedef unsigned char byte;
 
 char * c_str(char *p, size_t len);

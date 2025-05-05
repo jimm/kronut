@@ -36,10 +36,10 @@ void dump_hex(const byte * const bytes, size_t size, const char * const msg) {
   size_t offset = 0;
   while (size > 0) {
     int chunk_len = 8 > size ? size : 8;
-    cout << setw(8) << setfill('0') << hex << offset << ' ';
+    cout << HEXPRINT(8, offset) << ' ';
     cout << "  ";
     for (int i = 0; i < chunk_len; ++i)
-      cout << ' ' << setw(2) << setfill('0') << hex << (int)p[i];
+      cout << ' ' << HEXPRINT(2, p[i]);
     for (int i = chunk_len; i < 8; ++i)
       cout << "   ";
     cout << ' ';

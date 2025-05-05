@@ -168,5 +168,6 @@ void TextEditor::write_slot() {
   if (kronos.error_reply_seen()) // error already printed
     return;
 
-  kronos.save_current_set_list();
+  // FIXME can't call this unless we specify setlist (bank) and slot (index)
+  // kronos.save_current_set_list();
 }

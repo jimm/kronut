@@ -10,6 +10,7 @@
 #include "set_list_wrapper.h"
 #include "slot_wrapper.h"
 #include "set_list_file.h"
+#include "utils.h"
 
 FileEditor::FileEditor(int format)
   : _file_format(format)
@@ -232,10 +233,10 @@ int FileEditor::hexdump(const char * const path) {
   // TODO this duplicates dump_hex code in utils.cpp
   while (size > 0) {
     int chunk_len = 8 > size ? size : 8;
-    out << setw(8) << setfill('0') << hex << offset << ' ';
+    out << HEXPRINT(8, offset) << ' ';
     out << "  ";
     for (int i = 0; i < chunk_len; ++i)
-      out << ' ' << setw(2) << setfill('0') << hex << (int)bytes[i];
+      out << ' ' << HEXPRINT(2, bytes[i]);
     for (int i = chunk_len; i < 8; ++i)
       out << "   ";
     out << ' ';

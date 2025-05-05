@@ -15,8 +15,8 @@
 
 #define SYSEX_HEADER SYSEX, KORG_MANUFACTURER_ID, static_cast<byte>(0x30 + channel), KRONOS_DEVICE_ID
 
-#define SYSEX_START_TIMEOUT_SECS 5
 #define SLEEP_MICROSECONDS 10000 // 10 milliseconds in microseconds
+#define SYSEX_START_TIMEOUT_SECS 5
 #define UNKNOWN_ERROR_BUFFER_LEN 128
 
 static Kronos *kronos_instance;
@@ -32,11 +32,12 @@ static const char * const error_reply_messages[] = {
   "(internal error code)",
   "other error: program bank is wrong type for received program dump (Func 73, 75); invalid data in Preset Pattern Dump (Func 7B).",
   "target object is protected",
-  "memory overflow"
+  "memory overflow",
+  "(unknown error code)",
+  // The following errors are kronut errors, not Kronos errors
+  "timeout"
 };
 static char unknown_error_buf[UNKNOWN_ERROR_BUFFER_LEN];
-
-#define ERROR_REPLY_BUFFER_INDEX 13
 
 Kronos *Kronos_instance() {
   return kronos_instance;
@@ -64,18 +65,13 @@ void Kronos::close() {
 
 bool Kronos::send_sysex(const char * const func_name, vector<byte> &sysex_bytes) {
   clog << "Kronos::" << func_name << ": sending sysex, func "
-       << setw(2) << setfill('0') << hex << (int)sysex_bytes[4]
-       << "\n";
+       << HEXPRINT(2, sysex_bytes[4]) << "\n";
   if (output != nullptr)        // only null during testing
     output->sendMessage(&sysex_bytes);
   return true;
 }
 
 bool Kronos::message_is_wanted(vector<byte> *message) {
-  // DEBUG
-  if (message->size() > 0 && message->at(0) == SYSEX && message->at(4) == FUNC_CODE_REPLY)
-      cerr << "sysex error response: " << error_reply_message() << "\n";
-
   return message->size() > 0
     && message->at(0) == SYSEX
     && (message->at(4) == waiting_for_sysex_function || message->at(4) == FUNC_CODE_REPLY);
@@ -84,7 +80,7 @@ bool Kronos::message_is_wanted(vector<byte> *message) {
 
 // Copies incoming MIDI message to sysex if it's what we're looking for.
 void Kronos::receive_midi(vector<byte> *message) {
-  if (message_is_wanted(message))
+  if (message_is_wanted(message) && message->at(0) == SYSEX)
     sysex = *message;
 }
 
@@ -92,14 +88,14 @@ void Kronos::receive_midi(vector<byte> *message) {
 // to be read into `sysex`.
 bool Kronos::read_sysex(const char * const func_name, byte reply_function) {
   clog << "Kronos::" << func_name << ": reading sysex, waiting for reply func "
-       << setw(2) << setfill('0') << hex << (int)reply_function
-       << "\n";
+       << HEXPRINT(2, reply_function) << "\n";
   sysex.clear();
   waiting_for_sysex_function = reply_function; // tells callback to copy these
   time_t start = time(0);
   while (true) {
     if (error_reply_seen()) {
       cerr << "sysex error response: " << error_reply_message() << "\n";
+      dump_sysex("ERROR REPLY SEEN IN WHILE TRUE");
       waiting_for_sysex_function = UNDEFINED;
       return false;
     }
@@ -117,14 +113,11 @@ bool Kronos::read_sysex(const char * const func_name, byte reply_function) {
 }
 
 bool Kronos::get(vector<byte> &request_sysex, const char * const func_name, byte reply_function) {
+  clog << "Kronos::get, func = " << func_name << ", reply_function = " << HEXPRINT(2, reply_function) << "\n";
   if (!send_sysex(func_name, request_sysex))
     return false;
   if (!read_sysex(func_name, reply_function))
     return false;
-  if (error_reply_seen()) {
-    cerr << "Kronos::" << func_name << " received an error response: " << error_reply_message() << "\n";
-    return false;
-  }
   return true;
 }
 
@@ -159,7 +152,6 @@ const char * const Kronos::error_reply_message() {
   case 0x64: error_index = 8; break;
   case 0x65: error_index = 9; break;
   case 0x66: error_index = 10; break;
-  // anything else
   default:
     snprintf(unknown_error_buf, UNKNOWN_ERROR_BUFFER_LEN,
              "unknown error reply code: %02x", error_code);
@@ -264,10 +256,6 @@ void Kronos::write_current_slot_name(KString *kstr) {
 }
 
 void Kronos::write_current_slot_comments(KString *kstr) {
-  // DEBUG
-  cerr << "writing comment:\n";
-  cerr << kstr->str() << "\n";
-
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
@@ -308,7 +296,7 @@ void Kronos::save_current_set_list() {
     EOX
   };
 
-  get(request_sysex, "save_set_list", FUNC_CODE_REPLY);
+  get(request_sysex, "save_current_set_list", FUNC_CODE_REPLY);
 }
 
 // ================ mode and movement commands ================

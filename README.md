@@ -228,8 +228,11 @@ Kronut can't save it or let you adjust it.
 
 # To Do
 
-- Require set list number when starting in edit mode. After each edit, save
-  the set list on the Kronos.
+- Require set list and slot numbers for most edit commands, and use Object
+  Dump (73) instead of Current Object Dump (75) when saving. This way we can
+  call Store Bank Request (76) to save the set list after each edit.
+
+- Use readline() instead of gets().
 
 - Find out where slot MIDI track is stored in the slot struct. It's only for
   songs.
