@@ -281,11 +281,14 @@ int main(int argc, char * const *argv) {
 
   switch (command) {
   case 'l':
-    if (file_editor.load_set_list_from_file(argv[2]) == 0)
-      kronos.write_set_list(atoi(argv[1]), file_editor.set_list());
+    if (file_editor.load_set_list_from_file(argv[2]) == 0) {
+      kronos.set_setlist(atoi(argv[1]));
+      kronos.write_set_list(file_editor.set_list());
+    }
     break;
   case 's':
-    if (kronos.read_set_list(atoi(argv[1]), file_editor.set_list()))
+    kronos.set_setlist(atoi(argv[1]));
+    if (kronos.read_set_list(file_editor.set_list()))
       file_editor.save_set_list_to_file(argv[2], opts.skip_empty_slots);
     break;
   case 'e':

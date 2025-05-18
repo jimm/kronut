@@ -189,11 +189,11 @@ KString * Kronos::read_current_slot_comments() {
 }
 
 // Returns true on success, false on error.
-bool Kronos::read_set_list(int n, SetList &set_list) {
+bool Kronos::read_set_list(SetList &set_list) {
   if (!set_mode(mode_set_list))
     return false;
 
-  goto_set_list(n);
+  goto_set_list(setlist_num);
 
   vector<byte> request_sysex = {
     SYSEX_HEADER,
@@ -218,14 +218,8 @@ SetList * Kronos::read_current_set_list() {
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  if (!send_sysex("read_current_set_list", request_sysex))
+  if (!get(request_sysex, "read_set_list", FUNC_CODE_CURR_OBJ_DUMP))
     return 0;
-  if (!read_sysex("read_current_set_list", FUNC_CODE_CURR_OBJ_DUMP))
-    return 0;
-  if (error_reply_seen()) {
-    cerr << "sysex error response: " << error_reply_message() << "\n";
-    return 0;
-  }
 
   int start = 7;
   int end = start;
@@ -259,11 +253,11 @@ void Kronos::write_current_slot_comments(KString *kstr) {
   write_current_string(OBJ_TYPE_SET_LIST_SLOT_COMMENTS, kstr);
 }
 
-bool Kronos::write_set_list(int n, SetList &set_list) {
+bool Kronos::write_set_list(SetList &set_list) {
   if (!set_mode(mode_set_list))
     return false;
 
-  goto_set_list(n);
+  goto_set_list(setlist_num);
 
   MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
 

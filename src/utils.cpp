@@ -1,24 +1,19 @@
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <string.h>
 #include "utils.h"
 
 using namespace std;
 
-static char c_str_buf[1024];
+vector<string> string_to_words(const char * const str) {
+    stringstream sstr(str);
+    string word;
+    vector<string> words;
 
-// Copies "internal representation" p to the pre-allocated buffer c_str_buf
-// and returns a pointer to that buffer. Obviously not thread safe.
-//
-// If p is 0, len is ignored and the pointer to c_str_buf is returned
-// without modifying it. This is a way to get the most recently convered
-// string without re-converting it.
-char * c_str(char *p, size_t len) {
-  if (p != 0) {
-    memcpy(c_str_buf, p, len);
-    c_str_buf[len] = 0;
-  }
-  return c_str_buf;
+    while (sstr >> word)
+        words.push_back(word);
+    return words;
 }
 
 void dump_hex(const byte * const bytes, size_t size, const char * const msg) {

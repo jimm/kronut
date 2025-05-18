@@ -29,6 +29,11 @@ public:
 
   void close();
 
+  int setlist() { return setlist_num; }
+  int slot() { return slot_num; }
+  void set_setlist(int n) { setlist_num = n; }
+  void set_slot(int n) { slot_num = n; }
+
   // Callback that receives MIDI messages.
   void receive_midi(vector<byte> *message);
 
@@ -38,8 +43,8 @@ public:
   SetList * read_current_set_list();
 
   // For file import/export via FileEditor
-  bool read_set_list(int n, SetList &set_list);
-  bool write_set_list(int n, SetList &set_list);
+  bool read_set_list(SetList &set_list);
+  bool write_set_list(SetList &set_list);
 
   KString * read_current_slot_name();
   KString * read_current_slot_comments();
@@ -59,6 +64,8 @@ public:
 
 protected:
   RtMidiOut *output;
+  int setlist_num;
+  int slot_num;
   byte channel;
   byte waiting_for_sysex_function;
   vector<byte> sysex;
