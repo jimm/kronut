@@ -1,10 +1,7 @@
-#ifndef MIDI_DATA_H
-
-#define MIDI_DATA_H
+#pragma once
 
 #include <stdlib.h>
-
-typedef unsigned char byte;
+#include "types.h"
 
 #define MD_INIT_MIDI 0
 #define MD_INIT_INTERNAL 1
@@ -38,5 +35,3 @@ private:
   void midi_to_internal_len();
   void internal_to_midi_len();
 };
-
-#endif /* MIDI_DATA_H */

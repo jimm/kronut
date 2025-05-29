@@ -1,5 +1,4 @@
-#ifndef KSTRING_H
-#define KSTRING_H
+#pragma once
 
 #include "midi_data.h"
 
@@ -26,5 +25,3 @@ private:
 
   void internal_bytes_to_str();
 };
-
-#endif /* KSTRING_H */

@@ -1,13 +1,11 @@
-#ifndef SLOT_WRAPPER_H
-#define SLOT_WRAPPER_H
+#pragma once
 
 #include <string>
+#include "types.h"
 #include "slot.h"
 #include "struct_wrapper.h"
 
 using namespace std;
-
-typedef unsigned char byte;
 
 // Color takes bits 2-5 of performance_type
 // Font takes bits
@@ -102,5 +100,3 @@ public:
   string comments();
   int set_comments(string str);
 };
-
-#endif /* SLOT_WRAPPER_H */

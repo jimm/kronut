@@ -1,6 +1,6 @@
-#ifndef SET_LIST_H
-#define SET_LIST_H
+#pragma once
 
+#include "types.h"
 #include "slot.h"
 
 // If a set list is uninitialized then it's first byte (name[0]) is this
@@ -10,8 +10,6 @@
 #define UNDEFINED_SET_LIST_NUM (-1)
 
 using namespace std;
-
-typedef unsigned char byte;
 
 struct SetList {
   byte name[SET_LIST_NAME_LEN];
@@ -27,5 +25,3 @@ struct SetList {
 
   bool is_initialized() { return name[0] != UNINITIALIZED_SET_LIST; }
 };
-
-#endif /* SET_LIST_H */

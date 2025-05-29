@@ -1,5 +1,4 @@
-#ifndef EDIT_FILE_H
-#define EDIT_FILE_H
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -68,5 +67,3 @@ class MarkdownSetListFile : public SetListFile {
 public:
   MarkdownSetListFile();
 };
-
-#endif /* EDIT_FILE_H */

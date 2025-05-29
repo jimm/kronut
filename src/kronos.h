@@ -1,15 +1,13 @@
-#ifndef KRONOS_H
-#define KRONOS_H
+#pragma once
 
 #include <rtmidi/RtMidi.h>
+#include "types.h"
 #include "consts.h"
 #include "set_list.h"
 #include "midi_data.h"
 #include "kstring.h"
 
 using namespace std;
-
-typedef unsigned char byte;
 
 enum KronosMode {
   mode_combination = MODE_COMBINATION,
@@ -34,10 +32,10 @@ public:
   void set_setlist(int n) { setlist_num = n; }
   void set_slot(int n) { slot_num = n; }
 
-  // Callback that receives MIDI messages.
-  void receive_midi(vector<byte> *message);
+  bool message_is_wanted(message *message);
 
-  bool message_is_wanted(vector<byte> *message);
+  // Callback that receives MIDI messages.
+  void receive_midi(message *message);
 
   // For text editing via TextEditor
   SetList * read_current_set_list();
@@ -68,15 +66,13 @@ protected:
   int slot_num;
   byte channel;
   byte waiting_for_sysex_function;
-  vector<byte> sysex;
+  message sysex;
 
-  virtual bool send_sysex(const char * const func_name, vector<byte> &sysex);
+  virtual bool send_sysex(const char * const func_name, message &sysex);
   virtual bool read_sysex(const char * const func_name, byte reply_function);
-  virtual bool get(vector<byte> &request_sysex, const char * const func_name, byte reply_function);
+  virtual bool call_sysex_func(message &request_sysex, const char * const func_name, byte reply_function);
   virtual void send_channel_message(byte status, byte data1, byte data2);
 
   virtual KString * read_current_string(int obj_type, byte pad);
   virtual void write_current_string(int obj_type, KString *kstr);
 };
-
-#endif /* KRONOS_H */

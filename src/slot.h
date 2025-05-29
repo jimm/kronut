@@ -1,11 +1,11 @@
-#ifndef SLOT_H
-#define SLOT_H
+#pragma once
+
+#include "types.h"
 
 // Name and comments lengths are for "internal bytes", not MIDI byte length
 #define SLOT_NAME_LEN 24
 #define SLOT_COMMENTS_LEN 512
-
-typedef unsigned char byte;
+#define UNDEFINED_SLOT_NUM (-1)
 
 /*
  * performance type
@@ -64,5 +64,3 @@ struct Slot {
   byte keyboard_track;
   byte comments[SLOT_COMMENTS_LEN];
 };
-
-#endif /* SLOT_H */

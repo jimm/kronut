@@ -13,8 +13,6 @@
 
 using namespace std;
 
-typedef unsigned char byte;
-
 struct opts {
   int channel;
   int input_num;
@@ -161,7 +159,11 @@ void run_text_editor(Kronos &k, int set_list_num) {
 
   puts("Type 'e' to edit current slot, 'p' print, 'd' dump, 'q' quit, 'h' help.");
   while (true) {
-    printf("kronut> ");
+    bool has_nums = k.setlist() != UNDEFINED_SET_LIST_NUM && k.slot() != UNDEFINED_SLOT_NUM;
+    if (has_nums)
+      printf("kronut [%d:%d]> ", k.setlist(), k.slot());
+    else
+      printf("kronut> ");
     fflush(stdout);
     if (fgets(buf, 32, stdin) == 0) {
       printf("\n");
@@ -207,7 +209,7 @@ void run_text_editor(Kronos &k, int set_list_num) {
   }
 }
 
-void midi_message_listener(double _time_stamp, vector<byte> *message, void *user_data) {
+void midi_message_listener(double _time_stamp, message *message, void *user_data) {
   Kronos *kronos = (Kronos *)user_data;
   kronos->receive_midi(message);
 }

@@ -1,5 +1,4 @@
-#ifndef CONSTS_H
-#define CONSTS_H
+#pragma once
 
 // MIDI and Kronos constants.
 
@@ -257,5 +256,3 @@
 #define CM_MONO_MODE_ON (byte)0x7E
 // Val must be 0
 #define CM_POLY_MODE_ON (byte)0x7F
-
-#endif /* CONSTS_H */

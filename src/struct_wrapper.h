@@ -1,11 +1,9 @@
-#ifndef STRUCT_WRAPPER_H
-#define STRUCT_WRAPPER_H
+#pragma once
 
 #include <string>
+#include "types.h"
 
 using namespace std;
-
-typedef unsigned char byte;
 
 // Provides methods for handling data within data structs. Currently handles
 // Kronos strings which can be up to X bytes long and are not necessarily
@@ -21,5 +19,3 @@ protected:
   // termination. Returns 0 if `str` is longer than `len`, else returns 0.
   int string_to_chars(byte *, int len, string str);
 };
-
-#endif /* STRUCT_WRAPPER_H */

@@ -1,13 +1,11 @@
-#ifndef SET_LIST_WRAPPER_H
-#define SET_LIST_WRAPPER_H
+#pragma once
 
 #include <string>
+#include "types.h"
 #include "set_list.h"
 #include "struct_wrapper.h"
 
 using namespace std;
-
-typedef unsigned char byte;
 
 enum SetListControlSurfaceAssignFrom {
   cs_assign_slot = 0,
@@ -37,5 +35,3 @@ public:
   void set_control_surface_assign_from(string str);
   const char * const control_surface_assign_from_name();
 };
-
-#endif /* SLOT_WRAPPER_H */

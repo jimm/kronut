@@ -19,6 +19,7 @@
 #define SYSEX_START_TIMEOUT_SECS 5
 #define UNKNOWN_ERROR_BUFFER_LEN 128
 
+
 static Kronos *kronos_instance;
 
 static const char * const error_reply_messages[] = {
@@ -47,7 +48,8 @@ Kronos *Kronos_instance() {
 
 // chan must be 0-15
 Kronos::Kronos(byte chan, RtMidiOut *output_port)
-  : channel(chan), output(output_port), waiting_for_sysex_function(UNDEFINED)
+  : channel(chan), output(output_port), setlist_num(UNDEFINED),
+    slot_num(UNDEFINED), waiting_for_sysex_function(UNDEFINED)
 {
   kronos_instance = this;
 }
@@ -63,7 +65,7 @@ void Kronos::close() {
 
 // ================ sysex I/O ================
 
-bool Kronos::send_sysex(const char * const func_name, vector<byte> &sysex_bytes) {
+bool Kronos::send_sysex(const char * const func_name, message &sysex_bytes) {
   clog << "Kronos::" << func_name << ": sending sysex, func "
        << HEXPRINT(2, sysex_bytes[4]) << "\n";
   if (output != nullptr)        // only null during testing
@@ -71,26 +73,60 @@ bool Kronos::send_sysex(const char * const func_name, vector<byte> &sysex_bytes)
   return true;
 }
 
-bool Kronos::message_is_wanted(vector<byte> *message) {
-  return message->size() > 0
-    && message->at(0) == SYSEX
-    && (message->at(4) == waiting_for_sysex_function || message->at(4) == FUNC_CODE_REPLY);
+bool Kronos::message_is_wanted(message *message) {
+  if (message->empty())
+    return false;
+
+  // It's a sysex; see if we want it
+  byte status = message->at(0);
+  if (status == SYSEX) {
+    byte func_code = message->at(4);
+    return func_code == waiting_for_sysex_function || func_code == FUNC_CODE_REPLY;
+  }
+
+  byte high_nibble = status & 0xf0;
+
+  // We want program changes
+  if (high_nibble == PROGRAM_CHANGE)
+    return true;
+
+  // We also want bank change LSB messages.
+  if (high_nibble == CONTROLLER) {
+    byte controller = message->at(1);
+    if (controller == CC_BANK_SELECT_LSB)
+      return true;
+  }
+
+  return false;
 }
 
 
 // Copies incoming MIDI message to sysex if it's what we're looking for.
-void Kronos::receive_midi(vector<byte> *message) {
-  if (message_is_wanted(message) && message->at(0) == SYSEX)
+void Kronos::receive_midi(message *message) {
+  if (!message_is_wanted(message))
+    return;
+
+  byte status = message->at(0);
+  byte data1 = message->at(1);
+
+  if (status == SYSEX)
     sysex = *message;
+  else {
+    byte high_nibble = status & 0xf0;
+    if (high_nibble == PROGRAM_CHANGE)
+      slot_num = (int)data1;
+    else if (high_nibble == CONTROLLER && data1 == CC_BANK_SELECT_LSB)
+      setlist_num = (int)data1;
+  }
 }
 
 // Poll, waiting for next Kronos sysex message that matches `reply_function`
 // to be read into `sysex`.
 bool Kronos::read_sysex(const char * const func_name, byte reply_function) {
-  clog << "Kronos::" << func_name << ": reading sysex, waiting for reply func "
-       << HEXPRINT(2, reply_function) << "\n";
   sysex.clear();
   waiting_for_sysex_function = reply_function; // tells callback to copy these
+  clog << "Kronos::" << func_name << ": reading sysex, waiting for reply func "
+       << HEXPRINT(2, reply_function) << "\n";
   time_t start = time(0);
   while (true) {
     if (error_reply_seen()) {
@@ -112,8 +148,8 @@ bool Kronos::read_sysex(const char * const func_name, byte reply_function) {
   return true;
 }
 
-bool Kronos::get(vector<byte> &request_sysex, const char * const func_name, byte reply_function) {
-  clog << "Kronos::get, func = " << func_name << ", reply_function = " << HEXPRINT(2, reply_function) << "\n";
+bool Kronos::call_sysex_func(message &request_sysex, const char * const func_name, byte reply_function) {
+  clog << "Kronos::call_sysex_func, func = " << func_name << ", reply_function = " << HEXPRINT(2, reply_function) << "\n";
   if (!send_sysex(func_name, request_sysex))
     return false;
   if (!read_sysex(func_name, reply_function))
@@ -122,7 +158,7 @@ bool Kronos::get(vector<byte> &request_sysex, const char * const func_name, byte
 }
 
 void Kronos::send_channel_message(byte status, byte data1, byte data2) {
-  vector<byte> message;
+  message message;
   message.push_back(status);
   message.push_back(data1);
   message.push_back(data2);
@@ -164,12 +200,12 @@ const char * const Kronos::error_reply_message() {
 
 // Returns a newly allocated KString.
 KString * Kronos::read_current_string(int obj_type, byte pad) {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(obj_type),
     EOX
   };
-  if (!get(request_sysex, "read_current_string", FUNC_CODE_CURR_OBJ_DUMP))
+  if (!call_sysex_func(request_sysex, "read_current_string", FUNC_CODE_CURR_OBJ_DUMP))
     return 0;
 
   int start = 7;
@@ -195,12 +231,12 @@ bool Kronos::read_set_list(SetList &set_list) {
 
   goto_set_list(setlist_num);
 
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  if (!get(request_sysex, "read_set_list", FUNC_CODE_CURR_OBJ_DUMP))
+  if (!call_sysex_func(request_sysex, "read_set_list", FUNC_CODE_CURR_OBJ_DUMP))
     return false;
 
   int start = 7;
@@ -213,12 +249,12 @@ bool Kronos::read_set_list(SetList &set_list) {
 }
 
 SetList * Kronos::read_current_set_list() {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP_REQ, static_cast<byte>(OBJ_TYPE_SET_LIST),
     EOX
   };
-  if (!get(request_sysex, "read_set_list", FUNC_CODE_CURR_OBJ_DUMP))
+  if (!call_sysex_func(request_sysex, "read_set_list", FUNC_CODE_CURR_OBJ_DUMP))
     return 0;
 
   int start = 7;
@@ -234,7 +270,7 @@ SetList * Kronos::read_current_set_list() {
 // ================ writing objects ================
 
 void Kronos::write_current_string(int obj_type, KString *kstr) {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(obj_type), 0
   };
@@ -242,7 +278,7 @@ void Kronos::write_current_string(int obj_type, KString *kstr) {
     request_sysex.push_back(kstr->midi_bytes[i]);
   request_sysex.push_back(EOX);
 
-  get(request_sysex, "write_current_string", FUNC_CODE_REPLY);
+  call_sysex_func(request_sysex, "write_current_string", FUNC_CODE_REPLY);
 }
 
 void Kronos::write_current_slot_name(KString *kstr) {
@@ -261,18 +297,18 @@ bool Kronos::write_set_list(SetList &set_list) {
 
   MIDIData midi_data(MD_INIT_INTERNAL, (byte *)&set_list, sizeof(SetList));
 
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_CURR_OBJ_DUMP, static_cast<byte>(OBJ_TYPE_SET_LIST),
     (byte)0,                                   // bank
-    (byte)((n >> 7) & 0x7f), (byte)(n & 0x7f), // idH, idL
+    (byte)((setlist_num >> 7) & 0x7f), (byte)(setlist_num & 0x7f), // idH, idL
     0                                          // version
   };
   for (int i = 0; i < midi_data.midi_len; ++i)
     request_sysex.push_back(midi_data.midi_bytes[i]);
   request_sysex.push_back(EOX);
 
-  bool got = get(request_sysex, "write_current_set_list", FUNC_CODE_REPLY);
+  bool got = call_sysex_func(request_sysex, "write_current_set_list", FUNC_CODE_REPLY);
   if (!got)
     return false;
 
@@ -283,37 +319,37 @@ bool Kronos::write_set_list(SetList &set_list) {
 // ================ saving objects to non-volatile storage ================
 
 void Kronos::save_current_set_list() {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_STORE_BANK_REQ,
     static_cast<byte>(OBJ_TYPE_SET_LIST), 0, // bank must be 0
     EOX
   };
 
-  get(request_sysex, "save_current_set_list", FUNC_CODE_REPLY);
+  call_sysex_func(request_sysex, "save_current_set_list", FUNC_CODE_REPLY);
 }
 
 // ================ mode and movement commands ================
 
 KronosMode Kronos::mode() {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_MODE_REQ, EOX
   };
-  if (!get(request_sysex, "mode", FUNC_CODE_MODE_DATA))
+  if (!call_sysex_func(request_sysex, "mode", FUNC_CODE_MODE_DATA))
     return mode_combination;    // what else should I do?
   return (KronosMode)(sysex[5] & 0x0f);
 }
 
 bool Kronos::set_mode(KronosMode mode) {
-  vector<byte> request_sysex = {
+  message request_sysex = {
     SYSEX_HEADER,
     FUNC_CODE_MODE_CHANGE, (byte)mode, EOX
   };
-  return get(request_sysex, "set_mode", FUNC_CODE_REPLY);
+  return call_sysex_func(request_sysex, "set_mode", FUNC_CODE_REPLY);
 }
 
-void Kronos::goto_set_list(int n) {
+ void Kronos::goto_set_list(int n) {
   set_mode(mode_set_list);
   send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_MSB, 0);
   send_channel_message(CONTROLLER + channel, CC_BANK_SELECT_LSB, (byte)(n & 0xff));

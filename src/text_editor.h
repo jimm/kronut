@@ -1,5 +1,4 @@
-#ifndef TEXT_EDITOR_H
-#define TEXT_EDITOR_H
+#pragma once
 
 #include <string>
 #include "kronos.h"
@@ -44,5 +43,3 @@ protected:
   void load_from_file();
   string trimmed(string s);
 };
-
-#endif /* TEXT_EDITOR_H */

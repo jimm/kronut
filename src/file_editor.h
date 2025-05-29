@@ -1,5 +1,4 @@
-#ifndef FILE_EDITOR_H
-#define FILE_EDITOR_H
+#pragma once
 
 #include <string>
 #include "kronos.h"
@@ -43,5 +42,3 @@ protected:
   string trimmed(string s);
   void init_set_list();
 };
-
-#endif /* FILE_EDITOR_H */
