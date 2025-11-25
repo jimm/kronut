@@ -1,3 +1,4 @@
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -168,7 +169,7 @@ int FileEditor::save_set_list_to_file(const char * const path, bool skip_empty_s
 
   _file->header(1, slw.name());
   save_set_list_settings_to_file(slw);
-  _file->puts("");
+  _file->puts((char *)"");
 
   for (int i = 0; i < 128; ++i) {
     Slot &slot = _set_list.slots[i];
@@ -181,7 +182,7 @@ int FileEditor::save_set_list_to_file(const char * const path, bool skip_empty_s
     if (sw.comments().size() > 0)
       _file->text(trimmed(sw.comments()));
     save_set_list_slot_settings_to_file(sw);
-    _file->puts("");
+    _file->puts((char *)"");
   }
 
   _file->close();

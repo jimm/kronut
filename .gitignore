@@ -3,3 +3,4 @@ kronut_test
 *.d
 *.o
 TAGS
+.claude

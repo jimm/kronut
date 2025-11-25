@@ -1,3 +1,4 @@
+#include <cstring>
 #include "struct_wrapper.h"
 
 // Reads up to len bytes and returns a string. Handles non-null terminated

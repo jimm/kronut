@@ -1,9 +1,13 @@
 NAME = kronut
 # DEBUG = -DDEBUG -DDEBUG_STDERR
-CPPFLAGS += -std=c++14 -g $(DEBUG)
-LIBS = -lrtmidi
+
+# Use pkg-config for rtmidi if available, otherwise use system defaults
+RTMIDI_CFLAGS := $(shell pkg-config --cflags rtmidi 2>/dev/null || echo "-I/usr/include")
+RTMIDI_LIBS := $(shell pkg-config --libs rtmidi 2>/dev/null || echo "-lrtmidi")
+
+CPPFLAGS += -std=c++14 -g $(DEBUG) $(RTMIDI_CFLAGS)
+LIBS = $(RTMIDI_LIBS)
 TESTLIBS = -lCatch2 -lCatch2Main
-LDFLAGS += $(LIBS)
 
 prefix = /usr/local
 exec_prefix = $(prefix)
@@ -28,7 +32,7 @@ CATCH_CATEGORY ?= ""
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 -include $(SRC:%.cpp=%.d)
 -include $(TEST_SRC:%.cpp=%.d)
@@ -37,7 +41,7 @@ test: $(NAME)_test
 	./$(NAME)_test --colour-mode none $(CATCH_CATEGORY)
 
 $(NAME)_test:	$(OBJS) $(TEST_OBJS)
-	$(CXX) $(LDFLAGS) $(TESTLIBS) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^)
+	$(CXX) -o $@ $(filter-out $(TEST_OBJ_FILTERS),$^) $(LDFLAGS) $(LIBS) $(TESTLIBS)
 
 install:	$(NAME)
 	install -s $(NAME) $(bindir)
