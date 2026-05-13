@@ -58,4 +58,4 @@ clean:
 	rm -f $(NAME) $(NAME)_test src/*.o test/*.o
 
 distclean: clean
-	rm -f src/*.d test/*.d
+	rm -f src/*.d src/*.d.* test/*.d test/*.d.*
