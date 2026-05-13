@@ -1,6 +1,7 @@
 kronut
 kronut_test
 *.d
+*.d.*
 *.o
 TAGS
 .claude

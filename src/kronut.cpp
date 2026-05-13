@@ -48,10 +48,18 @@ const char *usage_lines[] = {
   "    help         This help."
 };
 
+// Makes `s` lowercase in-place.
+string & lowercase(string &s) {
+  transform(s.begin(), s.end(), s.begin(), [](unsigned char c){
+    return tolower(c);
+  });
+  return s;
+}
+
 int find_kronos_input_num(RtMidiIn &input) {
   for (int i = 0; i < input.getPortCount(); ++i) {
     string name = input.getPortName(i);
-    if (name == "Kronos KEYBOARD")
+    if (lowercase(name) == "kronos keyboard")
       return i;
   }
   return -1;
@@ -60,7 +68,7 @@ int find_kronos_input_num(RtMidiIn &input) {
 int find_kronos_output_num(RtMidiOut &output) {
   for (int i = 0; i < output.getPortCount(); ++i) {
     string name = output.getPortName(i);
-    if (name == "Kronos SOUND")
+    if (lowercase(name) == "kronos sound")
       return i;
   }
   return -1;
